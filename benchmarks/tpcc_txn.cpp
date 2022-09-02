@@ -618,8 +618,10 @@ RC TPCCTxnManager::run_txn_state(yield_func_t &yield, uint64_t cor_id) {
 			break;
 		case TPCC_FIN :
 			state = TPCC_FIN;
-			if (tpcc_query->rbk) INC_STATS(get_thd_id(),tpcc_fin_abort,get_sys_clock() - starttime);
-			return Abort;
+			if (tpcc_query->rbk) {
+				INC_STATS(get_thd_id(),tpcc_fin_abort,get_sys_clock() - starttime);
+				return Abort;
+			}
 			break;
 		default:
 				assert(false);
