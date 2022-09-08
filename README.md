@@ -19,7 +19,7 @@ For build:
 
 Build
 --------------
-- `git clone https://github.com/yqekzb123/RCBench.git`
+- `git clone https://github.com/rhaaaa123/RCBench.git`
 - `make clean`
 - `make deps`
 - `make -j16`
