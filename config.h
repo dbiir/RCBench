@@ -27,37 +27,47 @@
 #define SIT_COROUTINE   3
 #define SIT_DBPA        4
 #define SIT_ALL         5
-#define RDMA_SIT 2
+#define RDMA_SIT SIT_COROUTINE
 #if RDMA_SIT == SIT_TCP
   #define RDMA_ONE_SIDE false
   #define RDMA_TWO_SIDE false
   #define USE_COROUTINE false
   #define USE_DBPAOR false
+#define SERVER_GENERATE_QUERIES false
 #elif RDMA_SIT == SIT_TWO_SIDE
   #define RDMA_ONE_SIDE false
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE false
   #define USE_DBPAOR false
+#define SERVER_GENERATE_QUERIES false
 #elif RDMA_SIT == SIT_ONE_SIDE
   #define RDMA_ONE_SIDE true
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE false
   #define USE_DBPAOR false
-#elif RDMA_SIT == SIT_COROUTINE //|| CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_WAIT_DIE
+  #if CC_ALG == RDMA_CALVIN
+    #define SERVER_GENERATE_QUERIES false
+  #else
+    #define SERVER_GENERATE_QUERIES true
+  #endif
+#elif RDMA_SIT == SIT_COROUTINE// || CC_ALG == RDMA_WOUND_WAIT
   #define RDMA_ONE_SIDE true
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE true
   #define USE_DBPAOR false
+#define SERVER_GENERATE_QUERIES true
 #elif RDMA_SIT == SIT_DBPA
   #define RDMA_ONE_SIDE true
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE false
   #define USE_DBPAOR true
+#define SERVER_GENERATE_QUERIES true
 #elif RDMA_SIT == SIT_ALL
   #define RDMA_ONE_SIDE true
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE true
   #define USE_DBPAOR true
+#define SERVER_GENERATE_QUERIES true
 #endif
 /************RDMA TYPE**************/
 #define CHANGE_TCP_ONLY 0
@@ -84,6 +94,7 @@
 #define SAVE_HISTROY_WITH_EMPTY_OPT false
 #define DYNAMIC_SEQ_LEN false
 #define ONLY_ONE_HOME false
+#define NO_PHYSICAL false
 //InputActionSequenceCreator
 #define INPUT_FILE_PATH "./input.txt"
 
@@ -121,7 +132,7 @@
 // PART_CNT should be at least NODE_CNT
 #define PART_CNT NODE_CNT
 #define CLIENT_NODE_CNT 1
-#define CLIENT_THREAD_CNT 2
+#define CLIENT_THREAD_CNT 4
 #define CLIENT_REM_THREAD_CNT 1
 #define CLIENT_SEND_THREAD_CNT 1
 #define CLIENT_RUNTIME false
@@ -154,9 +165,7 @@
 #define TIME_ENABLE         true //STATS_ENABLE
 
 #define FIN_BY_TIME true
-#define MAX_TXN_IN_FLIGHT 200000
-
-#define SERVER_GENERATE_QUERIES true
+#define MAX_TXN_IN_FLIGHT 10000
 
 /***********************************************/
 // Memory System
@@ -183,9 +192,9 @@
 // Message Passing
 /***********************************************/
 #define TPORT_TYPE tcp
-#define TPORT_PORT 7000
-#define TPORT_TWOSIDE_PORT 15000
-#define RDMA_TPORT 9214
+#define TPORT_PORT 7100
+#define TPORT_TWOSIDE_PORT 7300
+#define RDMA_TPORT 7200
 #define SET_AFFINITY true
 
 #define MAX_TPORT_NAME 128
@@ -211,7 +220,7 @@
 //RDMA_NO_WAIT2, RDMA_WAIT_DIE2:no matter read or write, mutex lock is used 
 #define ISOLATION_LEVEL SERIALIZABLE
 
-#define CC_ALG RDMA_TS1
+#define CC_ALG RDMA_MOCC
 
 #define YCSB_ABORT_MODE false
 #define QUEUE_C  APACITY_NEW 1000000
@@ -308,6 +317,8 @@
 #define VALIDATION_LOCK				"no-wait" // no-wait or waiting
 #define PRE_ABORT2					"true"
 #define ATOMIC_WORD					false
+// [RDMA_RETRY]
+#define MAX_RETRY_COUNT 1
 // [RDMA_MAAT]
 #define RDMA_TXNTABLE_MAX (COROUTINE_CNT + 1) * THREAD_CNT
 #define COMMIT_ADJUST false
@@ -354,12 +365,12 @@
 #define ACCESS_PERC 0.03
 #define INIT_PARALLELISM 1
 #define SYNTH_TABLE_SIZE 41943040
-#define ZIPF_THETA 0.2
-#define TXN_WRITE_PERC 0.2
+#define ZIPF_THETA 0.95
+#define TXN_WRITE_PERC 1
 #define TUP_WRITE_PERC 0.2
 #define SCAN_PERC           0
 #define SCAN_LEN          20
-#define PART_PER_TXN 10
+#define PART_PER_TXN 2
 #define PERC_MULTI_PART     MPR
 #define REQ_PER_QUERY 10
 #define FIELD_PER_TUPLE       10
@@ -455,6 +466,7 @@ enum PPSTxnType {
 // [RDMA_MAAT]
 #if WORKLOAD == YCSB
 #define ROW_SET_LENGTH int(ZIPF_THETA * 50 + 10)
+#define WAIT_QUEUE_LENGTH int(ZIPF_THETA * 10 + 3)
 #else
 #define WAIT_QUEUE_LENGTH int(PERC_PAYMENT * PERC_PAYMENT * 100 + 3)
 #define ROW_SET_LENGTH int(PERC_PAYMENT * 100 + 30)

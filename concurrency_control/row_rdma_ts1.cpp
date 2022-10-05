@@ -75,6 +75,7 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 		}
 		if (ts < temp_row->wts) {
 			rc = RCOK;
+			mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			return rc;
 		}
 		//CAS(old_mutx, new_mutx) and read again
@@ -105,6 +106,8 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 		if (ts < temp_row->wts) {
 			rc = RCOK;
 			_row->mutx = 0;
+			mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
+			mem_allocator.free(second_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			return rc;
 		}
 		//read success

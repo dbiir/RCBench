@@ -203,7 +203,8 @@ RC RDMA_silo::validate_rdma_silo(yield_func_t &yield, TxnManager * txnMng, uint6
 	}
 
 	txnMng->max_tid = max_tid;
-
+	if (txnMng->max_tid > txnMng->_cur_tid)
+		txnMng->_cur_tid = txnMng->max_tid;
 	return rc;
 }
 
@@ -340,7 +341,8 @@ RDMA_silo::finish(yield_func_t &yield, RC rc , TxnManager * txnMng, uint64_t cor
 			txnMng->h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 			// RDMA_ASSERT(res_p == rdmaio::IOCode::Ok);
 #else
-            auto dbres1 = rc_qp[i][txnMng->get_thd_id() + cor_id * g_thread_cnt]->wait_one_comp();
+            starttime = get_sys_clock();
+			auto dbres1 = rc_qp[i][txnMng->get_thd_id() + cor_id * g_thread_cnt]->wait_one_comp();
             RDMA_ASSERT(dbres1 == IOCode::Ok);
 			endtime = get_sys_clock();
 			INC_STATS(txnMng->get_thd_id(), worker_waitcomp_time, endtime-starttime);
@@ -411,7 +413,8 @@ RDMA_silo::finish(yield_func_t &yield, RC rc , TxnManager * txnMng, uint64_t cor
 			txnMng->h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 			// RDMA_ASSERT(res_p == rdmaio::IOCode::Ok);
 #else
-            auto dbres1 = rc_qp[i][txnMng->get_thd_id() + cor_id * g_thread_cnt]->wait_one_comp();
+            starttime = get_sys_clock();
+			auto dbres1 = rc_qp[i][txnMng->get_thd_id() + cor_id * g_thread_cnt]->wait_one_comp();
             RDMA_ASSERT(dbres1 == IOCode::Ok); 
 			endtime = get_sys_clock();
 			INC_STATS(txnMng->get_thd_id(), worker_waitcomp_time, endtime-starttime);

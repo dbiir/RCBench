@@ -228,6 +228,7 @@ public:
   double worker_waitcomp_time;
   double worker_proto_wait_time;
   uint64_t worker_yield_cnt;
+  uint64_t worker_waitcomp_cnt;
   uint64_t worker_oneside_cnt;
   double worker_activate_txn_time;
   double worker_deactivate_txn_time;
