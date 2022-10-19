@@ -1562,7 +1562,7 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 						assert(write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), m_item->offset,(char*)test_row, cor_id) == true);
 						mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));	
 						if (!simulation->is_done() && retry_count < MAX_RETRY_COUNT) {
-							retry_count++
+							retry_count++;
 							goto retry_lock;
 						}
 						else {
