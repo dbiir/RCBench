@@ -154,7 +154,9 @@ TxnManager::validate_silo()
 	}
 
 	this->max_tid = max_tid;
-
+	find_tid_silo(max_tid);
+	// if (this->max_tid > this->_cur_tid)
+		// this->_cur_tid = this->max_tid;
 	return rc;
 }
 

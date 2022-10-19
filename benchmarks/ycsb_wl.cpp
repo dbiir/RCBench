@@ -92,7 +92,7 @@ RC YCSBWorkload::init_table() {
             if (total_row > g_synth_table_size)
                 goto ins_done;
             // Assumes striping of partitions to nodes
-            if(g_part_cnt % g_node_cnt != g_node_id) {
+            if(part_id % g_node_cnt != g_node_id) {
               total_row++;
               continue;
             }

@@ -493,11 +493,11 @@ void TxnManager::release() {
 	delete uncommitted_writes_y;
 	delete uncommitted_reads;
 #endif
-#if CC_ALG == MAAT
-	uncommitted_writes->clear();
-	uncommitted_writes_y->clear();
-	uncommitted_reads->clear();
-#endif
+// #if CC_ALG == MAAT
+// 	uncommitted_writes->clear();
+// 	uncommitted_writes_y->clear();
+// 	uncommitted_reads->clear();
+// #endif
 #if CC_ALG == RDMA_MAAT
 	uncommitted_writes.clear();
 	uncommitted_writes_y.clear();
@@ -1133,7 +1133,7 @@ void TxnManager::cleanup(yield_func_t &yield, RC rc, uint64_t cor_id) {
 	for (int rid = row_cnt - 1; rid >= 0; rid --) {
 		cleanup_row(yield, rc,rid,remote_access,cor_id);  //return abort write row
 	}
-#if 0 && USE_DBPAOR == true && CC_ALG == RDMA_TS1 
+#if 1 && USE_DBPAOR == true && CC_ALG == RDMA_TS1 
 	starttime = get_sys_clock();
 	uint64_t endtime;
     for(int i=0;i<g_node_cnt;i++){ //for the same node, batch unlock remote
@@ -1507,6 +1507,7 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 		if(type == RD || type == WR){
 			uint64_t tts = get_timestamp();
 			RC rc = RCOK;
+			uint64_t retry_count = 0;
 			row_t * test_row = read_remote_row(yield,loc,m_item->offset,cor_id);
 			if(test_row->is_hot > HOT_VALUE * 10) {
 				test_row->is_hot = 0;
@@ -1560,7 +1561,10 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 						test_row->_tid_word = 0;
 						assert(write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), m_item->offset,(char*)test_row, cor_id) == true);
 						mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));	
-						if (!simulation->is_done()) goto retry_lock;
+						if (!simulation->is_done() && retry_count < MAX_RETRY_COUNT) {
+							retry_count++;
+							goto retry_lock;
+						}
 						else {
 							DEBUG_M("TxnManager::get_row(abort) access free\n");
 							row_local = NULL;
@@ -1698,6 +1702,7 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 	#endif
 
 	#if CC_ALG == RDMA_NO_WAIT
+		uint64_t retry_count = 0;
 	remote_atomic_retry_lock:
 		if(type == RD || type == WR){
 			uint64_t new_lock_info;
@@ -1737,7 +1742,10 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 				if(num_atomic_retry > max_num_atomic_retry) max_num_atomic_retry = num_atomic_retry;
 				mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 				lock_info = try_lock;
-				if (!simulation->is_done()) goto remote_atomic_retry_lock;
+				if (!simulation->is_done() && retry_count < MAX_RETRY_COUNT) {
+					retry_count++;
+					goto remote_atomic_retry_lock;
+				} 
 				else {
 					DEBUG_M("TxnManager::get_row(abort) access free\n");
 					row_local = NULL;
@@ -1763,7 +1771,10 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 				total_num_atomic_retry++;
 				if(num_atomic_retry > max_num_atomic_retry) max_num_atomic_retry = num_atomic_retry;
 				lock_info = try_lock;
-				if (!simulation->is_done()) goto remote_atomic_retry_lock;
+				if (!simulation->is_done() && retry_count < MAX_RETRY_COUNT) {
+					retry_count++;
+					goto remote_atomic_retry_lock;
+				} 
 				else {
 					DEBUG_M("TxnManager::get_row(abort) access free\n");
 					row_local = NULL;
@@ -1791,7 +1802,7 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 		return rc;
 	#endif
 
-	#if CC_ALG == RDMA_DSLR_NO_WAIT//TODO
+	#if CC_ALG == RDMA_DSLR_NO_WAIT
 		int wait_slice = 1 * 1000UL;//1us
 		int count_max = 32768;
 		//get remote address
@@ -1844,7 +1855,7 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 			// mem_allocator.free(m_item, sizeof(itemid_t));
 			// return Abort;
 
-     #if 1
+		#if 1
             uint64_t wait = rand() % 4;
             if (wait != 0) return Abort;//random abort
 
@@ -2424,9 +2435,8 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 
 	#if CC_ALG == RDMA_TS1		
 		ts_t ts = get_timestamp();
-
+		uint64_t* wid = nullptr;
 		row_t * remote_row = read_remote_row(yield,loc,m_item->offset,cor_id);
-		uint64_t* wid = (uint64_t*)mem_allocator.alloc(sizeof(uint64_t)*CASCADING_LENGTH);
 		// assert(remote_row->get_primary_key() == req->key);
 		if(type == RD) {
 			if(ts < remote_row->wts){
@@ -2558,9 +2568,11 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 					uint64_t* temp_tid = (uint64_t *)mem_allocator.alloc(sizeof(uint64_t));
 					*temp_tid = 0;
 					assert(write_remote_row(loc, sizeof(uint64_t),mutx_offset,(char*)(temp_tid))==true);
+					mem_allocator.free(temp_tid,sizeof(uint64_t));
 					goto end;
 				}
 				//read success
+				wid = (uint64_t*)mem_allocator.alloc(sizeof(uint64_t)*CASCADING_LENGTH);
 				for (int i = 0; i < CASCADING_LENGTH; i++) {
 					wid[i] = second_row->tid[i];
 				}
@@ -2581,7 +2593,8 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 	end:
 		rc = RCOK;
 		rc = preserve_access(row_local,m_item,remote_row,type,remote_row->get_primary_key(),loc,wid);
-		mem_allocator.free(wid, sizeof(uint64_t)*CASCADING_LENGTH);
+		if (wid != nullptr)	mem_allocator.free(wid, sizeof(uint64_t)*CASCADING_LENGTH);
+		// mem_allocator.free(remote_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 		return rc;
 	#endif	
 
@@ -3298,6 +3311,7 @@ row_t * TxnManager::cas_and_read_remote(yield_func_t &yield, uint64_t& try_lock,
 		waitcomp_time = get_sys_clock();
 		
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
+		// INC_STATS(get_thd_id(), worker_waitcomp_cnt, 1);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (dbres1.first == 0);
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
@@ -3357,10 +3371,7 @@ void TxnManager::batch_unlock_remote(yield_func_t &yield, uint64_t cor_id, int l
 			uint64_t remote_off = (uint64_t)(remote_mr_attr[loc].buf + off);
 #endif
 #if CC_ALG == RDMA_TS1
-			uint64_t *temp_tid = (uint64_t *)mem_allocator.alloc(sizeof(uint64_t));
-			*temp_tid = 0;
-            memcpy(local_buf, (char*)(temp_tid), operate_size);
-			mem_allocator.free(temp_tid, sizeof(uint64_t));
+			memset(local_buf, 0, operate_size);
 			uint64_t remote_off = (uint64_t)(remote_mr_attr[loc].buf + off + sizeof(uint64_t));
 #endif 
 #if CC_ALG == RDMA_MVCC
@@ -3598,6 +3609,7 @@ row_t * TxnManager::read_remote_row(yield_func_t &yield, uint64_t target_server,
 		waitcomp_time = get_sys_clock();
 		
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
+		INC_STATS(get_thd_id(), worker_waitcomp_cnt, 1);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (res_p.first == 0);
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
@@ -3837,6 +3849,7 @@ uint64_t TxnManager::cas_remote_content(yield_func_t &yield, uint64_t target_ser
 		waitcomp_time = get_sys_clock();
 		
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
+		INC_STATS(get_thd_id(), worker_waitcomp_cnt, 1);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (res_p.first == 0);
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
@@ -4364,8 +4377,10 @@ RC TxnManager::preserve_access(row_t *&row_local,itemid_t* m_item,row_t *test_ro
 #endif
 
 #if CC_ALG == RDMA_TS1
-	for (int i = 0; i < CASCADING_LENGTH; i++) {
-		access->wid[i] = wid[i];
+	if (wid != nullptr) {
+		for (int i = 0; i < CASCADING_LENGTH; i++) {
+			access->wid[i] = wid[i];
+		}
 	}
 #endif
 

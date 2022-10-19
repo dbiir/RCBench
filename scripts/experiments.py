@@ -204,11 +204,11 @@ def ycsb_scaling_l():
     # nnodes = [3,6,9,12,15]
     # algos=['CALVIN','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE']
     # algos=['CICADA','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE','WOUND_WAIT']
-    # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
     # algos = ['RDMA_CICADA','RDMA_MVCC','RDMA_TS1']
     # algos = ['RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT']
     # algos = ['RDMA_SILO']
-    algos = ['RDMA_CICADA']#,'RDMA_WOUND_WAIT2']
+    # algos = ['RDMA_CICADA']#,'RDMA_WOUND_WAIT2']
     # algos = ['CALVIN']
     # algos = ['WOUND_WAIT']
     # base_table_size=262144*10
@@ -233,22 +233,23 @@ def ycsb_scaling_l():
 def ycsb_scaling_m():
     wl = 'YCSB'
     #nnodes = [1,2,4,8,16,32,64]
-    # nnodes = [9,12,15]
-    # nnodes = [9]
     nnodes = [3,6,9,12,15]
+    # nnodes = [6]
+    # nnodes = [15]
     # algos=['CALVIN','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE']
     # algos=['CICADA','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE','WOUND_WAIT']
-    # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
-    # algos = ['RDMA_CICADA','RDMA_MVCC','RDMA_TS1']
+    # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WOUND_WAIT2']
+    # algos=['RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2']
+    # algos = ['RDMA_NO_WAIT2','RDMA_WOUND_WAIT2']
     # algos = ['RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT']
-    # algos = ['RDMA_SILO']
-    algos = ['RDMA_CICADA']#,'RDMA_WOUND_WAIT2']
+    algos = ['RDMA_TS1']
+    # algos = ['RDMA_CICADA']#,'RDMA_WOUND_WAIT2']
     # algos = ['CALVIN']
     # algos = ['WOUND_WAIT']
     # base_table_size=262144*10
-    base_table_size=1048576*4
+    base_table_size=1048576*2
     # base_table_size=2097152*8
-    txn_write_perc = [0.2]
+    txn_write_perc = [1]
     tup_write_perc = [0.2]
     load = [20000]
     tcnt = [8]
@@ -267,7 +268,7 @@ def ycsb_scaling_m():
 def ycsb_scaling_h():
     wl = 'YCSB'
     #nnodes = [1,2,4,8,16,32,64]
-    # nnodes = [9,12,15]
+    # nnodes = [15]
     # nnodes = [2]
     nnodes = [3,6,9,12,15]
     # algos=['CALVIN','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE']
@@ -275,14 +276,14 @@ def ycsb_scaling_h():
     # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
     # algos = ['RDMA_CICADA','RDMA_MVCC','RDMA_TS1']
     # algos = ['RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT']
-    # algos = ['RDMA_SILO']
-    algos = ['RDMA_CICADA']#,'RDMA_WOUND_WAIT2']
+    algos = ['RDMA_TS1']
+    # algos = ['RDMA_CICADA']#,'RDMA_WOUND_WAIT2']
     # algos = ['CALVIN']
     # algos = ['WOUND_WAIT']
     # base_table_size=262144*10
-    base_table_size=1048576*4
+    base_table_size=1048576*2
     # base_table_size=2097152*8
-    txn_write_perc = [0.2]
+    txn_write_perc = [1]
     tup_write_perc = [0.2]
     load = [20000]
     tcnt = [8]
@@ -306,8 +307,8 @@ def ycsb_scaling_tcp():
     # nnodes = [3,6,9,12,15]
     # algos=['CALVIN','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE']
     #'RDMA_CICADA','RDMA_MVCC','RDMA_NO_WAIT','RDMA_NO_WAIT2','RDMA_WAIT_DIE2'
-    # algos=['RDMA_NO_WAIT','RDMA_NO_WAIT2']
-    algos=['CICADA','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE','WOUND_WAIT']
+    # algos=['NO_WAIT']
+    algos=['CICADA','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE','WOUND_WAIT','CALVIN']
     # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
     # algos = ['RDMA_CICADA','RDMA_MVCC','RDMA_TS1']
     # algos = ['RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT']
@@ -318,10 +319,10 @@ def ycsb_scaling_tcp():
     # base_table_size=262144*10
     base_table_size=1048576*10
     # base_table_size=2097152*8
-    txn_write_perc = [0.2]
+    txn_write_perc = [1]
     tup_write_perc = [0.2]
     load = [10000]
-    tcnt = [4]
+    tcnt = [24]
     ctcnt = [2]
     scnt = [1]
     rcnt = [1]
@@ -344,7 +345,7 @@ def ycsb_scaling_two_sided():
     # algos=['CALVIN','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE']
     #'RDMA_CICADA','RDMA_MVCC','RDMA_NO_WAIT','RDMA_NO_WAIT2','RDMA_WAIT_DIE2'
     # algos=['RDMA_NO_WAIT','RDMA_NO_WAIT2']
-    algos=['CICADA','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE','WOUND_WAIT']
+    algos=['CICADA','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE','WOUND_WAIT','CALVIN']
     # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
     # algos = ['RDMA_CICADA','RDMA_MVCC','RDMA_TS1']
     # algos = ['RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT']
@@ -355,10 +356,10 @@ def ycsb_scaling_two_sided():
     # base_table_size=262144*10
     base_table_size=1048576*10
     # base_table_size=2097152*8
-    txn_write_perc = [0.2]
+    txn_write_perc = [1]
     tup_write_perc = [0.2]
     load = [10000]
-    tcnt = [4]
+    tcnt = [24]
     ctcnt = [2]
     scnt = [1]
     rcnt = [1]
@@ -382,9 +383,9 @@ def ycsb_scaling_one_sided():
     #'RDMA_CICADA','RDMA_MVCC','RDMA_NO_WAIT','RDMA_NO_WAIT2','RDMA_WAIT_DIE2'
     # algos=['RDMA_NO_WAIT','RDMA_NO_WAIT2']
     # algos=['CICADA','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE','WOUND_WAIT']
-    # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
-    # algos = ['RDMA_CICADA','RDMA_MVCC','RDMA_TS1']
-    algos = ['RDMA_CICADA']
+    # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2','RDMA_CALVIN']
+    # algos = ['RDMA_CICADA','RDMA_MVCC','RDMA_TS1','RDMA_MAAT']
+    algos = ['RDMA_CALVIN']
     # algos = ['RDMA_SILO']
     # algos = ['RDMA_WOUND_WAIT2']
     # algos = ['CALVIN']
@@ -392,7 +393,7 @@ def ycsb_scaling_one_sided():
     # base_table_size=262144*10
     base_table_size=1048576*10
     # base_table_size=2097152*8
-    txn_write_perc = [0.2]
+    txn_write_perc = [1]
     tup_write_perc = [0.2]
     load = [200000]
     tcnt = [24]
@@ -424,14 +425,15 @@ def ycsb_scaling_coroutine():
     # algos = ['RDMA_WAIT_DIE']
     # algos = ['RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT','RDMA_CICADA']
     # algos = ['RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT']
-    algos = ['RDMA_MOCC']
-    # algos = ['RDMA_WOUND_WAIT2']
+    # algos = ['RDMA_CICADA','RDMA_MVCC','RDMA_TS1','RDMA_MAAT']
+    # algos = ['RDMA_TS1']
+    algos = ['RDMA_WOUND_WAIT2']
     # algos = ['CALVIN']
     # algos = ['WOUND_WAIT']
     # base_table_size=262144*10
     base_table_size=1048576*10
     # base_table_size=2097152*8
-    txn_write_perc = [0.2]
+    txn_write_perc = [1]
     tup_write_perc = [0.2]
     load = [200000]
     tcnt = [24]
@@ -463,14 +465,14 @@ def ycsb_scaling_dbpa():
     # algos = ['RDMA_CICADA','RDMA_MVCC','RDMA_TS1']
     # algos = ['RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT','RDMA_CICADA']
     # algos = ['RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT']
-    algos = ['RDMA_CICADA']
+    algos = ['RDMA_TS1']
     # algos = ['RDMA_WOUND_WAIT2']
     # algos = ['CALVIN']
     # algos = ['WOUND_WAIT']
     # base_table_size=262144*10
     base_table_size=1048576*10
     # base_table_size=2097152*8
-    txn_write_perc = [0.2]
+    txn_write_perc = [1]
     tup_write_perc = [0.2]
     load = [200000]
     tcnt = [24]
@@ -500,16 +502,16 @@ def ycsb_scaling_all():
     # algos=['CICADA','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE','WOUND_WAIT']
     # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
     # algos = ['RDMA_CICADA','RDMA_MVCC','RDMA_TS1']
-    algos = ['RDMA_CICADA']
+    # algos = ['RDMA_TS1']
     # algos = ['RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT']
-    # algos = ['RDMA_SILO']
-    # algos = ['RDMA_WOUND_WAIT2']
+    algos = ['RDMA_SILO']
+    # algos = ['RDMA_NO_WAIT2']
     # algos = ['CALVIN']
     # algos = ['WOUND_WAIT']
     # base_table_size=262144*10
     base_table_size=1048576*10
     # base_table_size=2097152*8
-    txn_write_perc = [0.2]
+    txn_write_perc = [1]
     tup_write_perc = [0.2]
     load = [200000]
     tcnt = [24]
@@ -606,47 +608,66 @@ def ycsb_skew():
     wl = 'YCSB'
     nnodes = [4]
     # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2']
-    algos=['RDMA_SILO']
-    # algos=['RDMA_NO_WAIT','RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT2','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    algos=['RDMA_MOCC']
+    # algos=['RDMA_SILO']
+    # algos=['RDMA_NO_WAIT','RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT2','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2','RDMA_SILO',"RDMA_MOCC","RDMA_TS","RDMA_TS1"]
+    # algos=['RDMA_NO_WAIT2','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2','RDMA_TS1']
+    # algos=['RDMA_NO_WAIT']
+    # algos=['RDMA_TS1']
     base_table_size=1048576*10
     #base_table_size=1048576*4    
     #base_table_size=2097152*8
 
-    txn_write_perc = [0.2]
+    txn_write_perc = [1]
     tup_write_perc = [0.2]
-    load = [20000]
+    load = [10000]
 
     tcnt = [24]  #THREAD_CNT
-
-    #skew = [0.0,0.4,0.6,0.8,0.9]
-    # skew = [0.2]
-    # skew = [0.0]
-    skew = [0.0,0.2,0.4,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95]
-    # skew = [0.7,0.8,0.85,0.9]
-    # skew = [0.0,0.2,0.4,0.6,0.8,0.85,0.9,0.95]
-    # skew = [0.25,0.55,0.65,0.75]
-    # skew = [0.2]
-    # skew = [0.0,0.1,0.2,0.3,0.4,0.5]
-    # skew = [0.1]
-    # skew = [0.8]
+    skew = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95]
+    # skew = [0.0,0.3,0.4,0.6]
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","SYNTH_TABLE_SIZE","TUP_WRITE_PERC","TXN_WRITE_PERC","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT"]
     exp = [[wl,n,algo,base_table_size*n,tup_wr_perc,txn_wr_perc,ld,sk,thr] for thr,txn_wr_perc,tup_wr_perc,ld,n,sk,algo in itertools.product(tcnt,txn_write_perc,tup_write_perc,load,nnodes,skew,algos)]
     return fmt,exp
+
 
 def ycsb_skew1():
     wl = 'YCSB'
-    nnodes = [2]
-    algos=dta_target_algos
-    base_table_size=2097152*8
-    txn_write_perc = [0.5]
-    tup_write_perc = [0.5]
+    nnodes = [4]
+    # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2']
+    # algos=['RDMA_SILO']
+    # algos=['RDMA_NO_WAIT','RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT2','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2','RDMA_SILO',"RDMA_MOCC","RDMA_TS","RDMA_TS1"]
+    # algos=['RDMA_NO_WAIT2','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2','RDMA_TS1','RDMA_SILO']
+    # algos=['RDMA_NO_WAIT','RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_TS']
+    algos=['RDMA_TS1']
+    base_table_size=1048576*10
+    #base_table_size=1048576*4    
+    #base_table_size=2097152*8
+
+    txn_write_perc = [1]
+    tup_write_perc = [0.2]
     load = [10000]
-    tcnt = [4]
-   # skew = [0.0,0.25,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.9]
-    skew = [0.0,0.6,0.9]
-    fmt = ["WORKLOAD","NODE_CNT","CC_ALG","SYNTH_TABLE_SIZE","TUP_WRITE_PERC","TXN_WRITE_PERC","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT"]
-    exp = [[wl,n,algo,base_table_size*n,tup_wr_perc,txn_wr_perc,ld,sk,thr] for thr,txn_wr_perc,tup_wr_perc,ld,n,sk,algo in itertools.product(tcnt,txn_write_perc,tup_write_perc,load,nnodes,skew,algos)]
+
+    tcnt = [24]  #THREAD_CNT
+    # skew = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95]
+    skew = [0.4,0.5,0.6,0.65,0.7,0.75,0.8,0.85,0.9,0.95]
+    fmt = ["WORKLOAD","NODE_CNT","CC_ALG","SYNTH_TABLE_SIZE","COROUTINE_CNT","TUP_WRITE_PERC","TXN_WRITE_PERC","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT"]
+    exp = [[wl,n,algo,base_table_size*n,8,tup_wr_perc,txn_wr_perc,ld,sk,thr] for thr,txn_wr_perc,tup_wr_perc,ld,n,sk,algo in itertools.product(tcnt,txn_write_perc,tup_write_perc,load,nnodes,skew,algos)]
     return fmt,exp
+
+# def ycsb_skew1():
+#     wl = 'YCSB'
+#     nnodes = [2]
+#     algos=dta_target_algos
+#     base_table_size=2097152*8
+#     txn_write_perc = [0.5]
+#     tup_write_perc = [0.5]
+#     load = [10000]
+#     tcnt = [4]
+#    # skew = [0.0,0.25,0.5,0.55,0.6,0.65,0.7,0.75,0.8,0.9]
+#     skew = [0.0,0.6,0.9]
+#     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","SYNTH_TABLE_SIZE","TUP_WRITE_PERC","TXN_WRITE_PERC","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT"]
+#     exp = [[wl,n,algo,base_table_size*n,tup_wr_perc,txn_wr_perc,ld,sk,thr] for thr,txn_wr_perc,tup_wr_perc,ld,n,sk,algo in itertools.product(tcnt,txn_write_perc,tup_write_perc,load,nnodes,skew,algos)]
+#     return fmt,exp
 
 def ycsb_stress1():
     wl = 'YCSB'
@@ -857,13 +878,14 @@ def ycsb_writes():
     nnodes = [4]
     # algos=['WOOKONG','WAIT_DIE','MVCC','MAAT','TIMESTAMP','OCC']
     # algos=dta_target_algos
-    algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
-    base_table_size=1048576
-    txn_write_perc = [0.8]
-    tup_write_perc = [0.8]
+    # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    algos=['RDMA_SILO']
+    base_table_size=1048576*10
+    txn_write_perc = [1]
+    tup_write_perc = [0.0,0.1,0.2,0.3,0.4,0.5,0.6,0.7,0.8,0.9,1.0]
     load = [20000]
     tcnt = [24]
-    skew = [0.2]
+    skew = [0.8]
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","SYNTH_TABLE_SIZE","TUP_WRITE_PERC","TXN_WRITE_PERC","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT"]
     exp = [[wl,n,algo,base_table_size*n,tup_wr_perc,txn_wr_perc,ld,sk,thr] for thr,txn_wr_perc,tup_wr_perc,ld,n,sk,algo in itertools.product(tcnt,txn_write_perc,tup_write_perc,load,nnodes,skew,algos)]
     return fmt,exp
@@ -885,25 +907,67 @@ def isolation_levels():
     exp = [[wl,n,algo,base_table_size*n,tup_wr_perc,txn_wr_perc,level,ld,sk] for txn_wr_perc,tup_wr_perc,algo,sk,ld,n,level in itertools.product(txn_write_perc,tup_write_perc,algos,skew,load,nnodes,levels)]
     return fmt,exp
 
+
+def ycsb_partitions_1():
+    wl = 'YCSB'
+    nnodes = [5]
+    algos=['RDMA_NO_WAIT2','RDMA_SILO']
+    # load = [10000,12000]
+    load = [10000]
+    # nparts = [6]
+    nparts = [2,3,4,5]
+    base_table_size= 1048576*10
+    txn_write_perc = [1]
+    tup_write_perc = [0.2]
+    tcnt = [8]
+    skew = [0.2]
+    rpq =  10
+    fmt = ["WORKLOAD","NODE_CNT","CC_ALG","REQ_PER_QUERY","PART_PER_TXN","SYNTH_TABLE_SIZE","TUP_WRITE_PERC","TXN_WRITE_PERC","ONLY_ONE_HOME","NO_PHYSICAL","COROUTINE_CNT","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT","STRICT_PPT"]
+    exp = [[wl,n,algo,rpq,p,base_table_size*n,tup_wr_perc,txn_wr_perc,'true','false',4,ld,sk,thr,1] for thr,txn_wr_perc,tup_wr_perc,algo,sk,ld,n,p in itertools.product(tcnt,txn_write_perc,tup_write_perc,algos,skew,load,nnodes,nparts)]
+    return fmt,exp
+
 def ycsb_partitions():
     wl = 'YCSB'
     nnodes = [15]
     # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
-    # algos=['RDMA_CICADA','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
-    algos=['RDMA_CICADA']
-    # algos=['RDMA_NO_WAIT2','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    algos=['RDMA_CICADA','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    # algos=['RDMA_TS1']
+    # algos=['RDMA_NO_WAIT2']
     # load = [10000,12000]
     load = [20000]
-    # nparts = [6]
-    nparts = [3,6,9,12,15]
-    base_table_size= 1048576*4 
-    txn_write_perc = [0.2]
+    nparts = [3,6,9,12]
+    # nparts = [3,6,9,12,15]
+    base_table_size= 1048576*2
+    txn_write_perc = [1]
     tup_write_perc = [0.2]
     tcnt = [8]
-    skew = [0.8,0.2]
+    skew = [0.2]
     rpq =  15
-    fmt = ["WORKLOAD","NODE_CNT","CC_ALG","REQ_PER_QUERY","PART_PER_TXN","SYNTH_TABLE_SIZE","TUP_WRITE_PERC","TXN_WRITE_PERC","ONLY_ONE_HOME","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT","STRICT_PPT"]
-    exp = [[wl,n,algo,rpq,p,base_table_size*n,tup_wr_perc,txn_wr_perc,'true',ld,sk,thr,1] for thr,txn_wr_perc,tup_wr_perc,algo,sk,ld,n,p in itertools.product(tcnt,txn_write_perc,tup_write_perc,algos,skew,load,nnodes,nparts)]
+    fmt = ["WORKLOAD","NODE_CNT","CC_ALG","REQ_PER_QUERY","PART_PER_TXN","SYNTH_TABLE_SIZE","TUP_WRITE_PERC","TXN_WRITE_PERC","ONLY_ONE_HOME","NO_PHYSICAL","COROUTINE_CNT","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT","STRICT_PPT"]
+    exp = [[wl,n,algo,rpq,p,base_table_size*n,tup_wr_perc,txn_wr_perc,'true','true',4,ld,sk,thr,1] for thr,txn_wr_perc,tup_wr_perc,algo,sk,ld,n,p in itertools.product(tcnt,txn_write_perc,tup_write_perc,algos,skew,load,nnodes,nparts)]
+    return fmt,exp
+
+
+def ycsb_partitions_h():
+    wl = 'YCSB'
+    nnodes = [15]
+    # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    # algos=['RDMA_MAAT', 'RDMA_TS1']
+    algos=['RDMA_TS1']
+    # algos=['RDMA_NO_WAIT2','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    # load = [10000,12000]
+    load = [10000]
+    # nparts = [3]
+    nparts = [3,6,9,12,15]
+    base_table_size= 1048576*2
+    txn_write_perc = [1]
+    tup_write_perc = [0.2]
+    tcnt = [8]
+    skew = [0.8]
+    rpq =  15
+    fmt = ["WORKLOAD","NODE_CNT","CC_ALG","REQ_PER_QUERY","PART_PER_TXN","SYNTH_TABLE_SIZE","TUP_WRITE_PERC","TXN_WRITE_PERC","ONLY_ONE_HOME","COROUTINE_CNT","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT","STRICT_PPT"]
+    exp = [[wl,n,algo,rpq,p,base_table_size*n,tup_wr_perc,txn_wr_perc,'true',4,ld,sk,thr,1] for thr,txn_wr_perc,tup_wr_perc,algo,sk,ld,n,p in itertools.product(tcnt,txn_write_perc,tup_write_perc,algos,skew,load,nnodes,nparts)]
     return fmt,exp
 
 def ycsb_partitions_distr():
@@ -925,18 +989,18 @@ def ycsb_partitions_distr():
 def tpcc_scaling():
     wl = 'TPCC'
     # nnodes = [4]
-    nnodes = [4]
+    nnodes = [2]
     # nalgos=['NO_WAIT','WAIT_DIE','MAAT','MVCC','TIMESTAMP','CALVIN','WOOKONG']
     # nalgos=['CALVIN','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE']
     # nalgos=['RDMA_CICADA']
-    nalgos=['RDMA_SILO']
+    nalgos=['NO_WAIT']
     # nalgos=['RDMA_CICADA','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2','RDMA_MAAT']
-    npercpay=[0.0]
+    npercpay=[1.0]
     # npercpay=[1.0]
-    wh=40
+    wh=16
     # wh=64
-    load = [20000]
-    tcnt = [40]
+    load = [10000]
+    tcnt = [10]
     ctcnt = [2]
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","PERC_PAYMENT","NUM_WH","CLIENT_NODE_CNT","MAX_TXN_IN_FLIGHT","THREAD_CNT","CLIENT_THREAD_CNT"]
     exp = [[wl,n,cc,pp,wh*n,1,tif,thr,cthr] for thr,cthr,tif,pp,n,cc in itertools.product(tcnt,ctcnt,load,npercpay,nnodes,nalgos)]
@@ -1346,6 +1410,8 @@ experiment_map = {
     'ycsb_skew1': ycsb_skew1,
     'isolation_levels': isolation_levels,
     'ycsb_partitions': ycsb_partitions,
+    'ycsb_partitions_1': ycsb_partitions_1,
+    'ycsb_partitions_h': ycsb_partitions_h,
     'ycsb_partitions_abort': ycsb_partitions_abort,
     'ppr_ycsb_partitions_abort': ycsb_partitions_abort,
     'ppr_ycsb_partitions_abort_plot': ppr_ycsb_partitions_abort_plot,
@@ -1408,13 +1474,14 @@ configs = {
     "CC_ALG" : "WAIT_DIE",
     "MPR" : 1.0,
     "TPORT_TYPE":"IPC",
-    "TPORT_PORT":"18000",
+    "TPORT_PORT":"7890",
     "PART_CNT": "NODE_CNT",
     "PART_PER_TXN": 2,
     "MAX_TXN_IN_FLIGHT": 10000,
     "NETWORK_DELAY": '0UL',
-    "COROUTINE_CNT": 4,
+    "COROUTINE_CNT": 8,
     "ONLY_ONE_HOME": 'false',
+    "NO_PHYSICAL": 'false',
     "NETWORK_DELAY_TEST": 'false',
     "DONE_TIMER": "1 * 20 * BILLION // ~1 minutes",
     "WARMUP_TIMER": "1 * 10 * BILLION // ~1 minutes",
@@ -1449,7 +1516,7 @@ configs = {
     "STRICT_PPT":1,
     "SET_AFFINITY":"true",
     "LOGGING":"false",
-    "SERVER_GENERATE_QUERIES":"true",
+    # "SERVER_GENERATE_QUERIES":"false",
     "SKEW_METHOD":"ZIPF",
     "ENVIRONMENT_EC2":"false",
     "YCSB_ABORT_MODE":"false",
