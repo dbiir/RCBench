@@ -110,7 +110,7 @@ public:
   bool readonly;
 #if CC_ALG == MAAT || CC_ALG == WOOKONG || CC_ALG == SSI || CC_ALG == WSI || \
     CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3 || CC_ALG == DLI_MVCC_OCC || \
-    CC_ALG == DLI_MVCC || CC_ALG == SILO
+    CC_ALG == DLI_MVCC || CC_ALG == SILO || CC_ALG == RDMA_MAAT_H
   uint64_t commit_timestamp;
 #endif
 };
@@ -169,6 +169,13 @@ public:
 #if CC_ALG == TICTOC
   uint64_t _min_commit_ts;
 #endif
+#if CC_ALG == RDMA_MAAT_H
+  Array<uint64_t> uncommitted_reads;
+  Array<uint64_t> uncommitted_writes;
+  Array<uint64_t> uncommitted_writes_y;
+  uint64_t greatest_write_timestamp;
+  uint64_t greatest_read_timestamp;
+#endif
 };
 
 class AckMessage : public Message {
@@ -182,7 +189,7 @@ public:
   void release() {}
 
   RC rc;
-#if CC_ALG == MAAT || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3
+#if CC_ALG == MAAT || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3 || CC_ALG == RDMA_MAAT_H
   uint64_t lower;
   uint64_t upper;
 #endif
@@ -210,6 +217,13 @@ public:
   uint64_t _min_commit_ts;
 #endif
   uint64_t txn_id;
+#if CC_ALG == RDMA_MAAT_H
+  Array<uint64_t> uncommitted_reads;
+  Array<uint64_t> uncommitted_writes;
+  Array<uint64_t> uncommitted_writes_y;
+  uint64_t greatest_write_timestamp;
+  uint64_t greatest_read_timestamp;
+#endif
 };
 
 class ForwardMessage : public Message {
@@ -409,7 +423,7 @@ public:
   void init();
   void release();
 
- Array<ycsb_request*> requests;
+  Array<ycsb_request*> requests;
 
 };
 

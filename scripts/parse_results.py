@@ -33,6 +33,7 @@ names = summary.keys()
 # print a, b, c
 
 a, b, c, d, f = 0, 0, 0, 0, 0
+avg_one, avg_one95, avg_two, avg_two95 = 0, 0, 0,  0
 if 'tput' in summary:
     a = sum(summary['tput'])
 if 'total_txn_abort_cnt' in summary and 'total_txn_commit_cnt' in summary and summary['total_txn_commit_cnt'][0] + summary['total_txn_abort_cnt'][0] != 0:
@@ -50,4 +51,12 @@ if 'txn_cnt' in summary:
     h = sum(summary['txn_cnt']) 
 if 'worker_oneside_cnt' in summary and 'total_txn_commit_cnt' in summary and summary['total_txn_commit_cnt'][0] + summary['total_txn_abort_cnt'][0] != 0:
     f = sum(summary['worker_oneside_cnt']) / (sum(summary['total_txn_commit_cnt']) + sum(summary['total_txn_abort_cnt']))
-print a, b, e, f, g / h
+if 'avg_one_sided_time' in summary:
+    avg_one = sum(summary['avg_one_sided_time'])
+if 'avg_two_sided_time' in summary:
+    avg_two = sum(summary['avg_two_sided_time'])
+if 'avg_95th_one_sided_time' in summary:
+    avg_one95 = sum(summary['avg_95th_one_sided_time'])
+if 'avg_95th_two_sided_time' in summary:
+    avg_two95 = sum(summary['avg_95th_two_sided_time'])
+print a, b, e, f, g / h, avg_one, avg_one95, avg_two, avg_two95

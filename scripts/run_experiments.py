@@ -247,12 +247,33 @@ for exp in exps:
         ccnt.append(e[-1])
     ccnt = sorted(list(set(ccnt)))
 
+    one_sided_cnt = []
+    for e in experiments:
+        one_sided_cnt.append(e[4])
+    one_sided_cnt = sorted(list(set(one_sided_cnt)))
+
+    sided_length = []
+    for e in experiments:
+        sided_length.append(e[5])
+    sided_length = sorted(list(set(sided_length)))
+
+    hg = []
+    for e in experiments:
+        hg.append(e[4])
+    hg = sorted(list(set(hg)))
+
     cmd = ''
     os.chdir('./scripts')
     if exp == 'ycsb_skew' or exp == 'ycsb_skew1':
         cmd = 'sh result.sh -a ycsb_skew -n {} -c {} -s {} -t {}'.format(str(cn[0]), ','.join([str(x) for x in al]), ','.join([str(x) for x in sk]), strnow)
     elif exp == 'ycsb_writes':
         cmd='sh result.sh -a ycsb_writes -n {} -c {} --wr {} -t {}'.format(cn[0], ','.join([str(x) for x in al]), ','.join([str(x) for x in wr]), strnow)
+    elif 'ycsb_one_sided_size' in exp:
+        cmd='sh result.sh -a ycsb_one_sided_size -n {} -c {} --one_sided_cnt {} --sided_size {} -t {}'.format(','.join([str(x) for x in cn]), ','.join([str(x) for x in al]), ','.join([str(x) for x in one_sided_cnt]), ','.join([str(x) for x in sided_length]), strnow)
+    elif 'ycsb_two_sided_size' in exp:
+        cmd='sh result.sh -a ycsb_one_sided_size -n {} -c {} --one_sided_cnt {} --sided_size {} -t {}'.format(','.join([str(x) for x in cn]), ','.join([str(x) for x in al]), ','.join([str(x) for x in one_sided_cnt]), ','.join([str(x) for x in sided_length]), strnow)
+    elif 'ycsb_hg' in exp:
+        cmd='sh result.sh -a ycsb_hg -n {} -c {} --hg {} -t {}'.format(','.join([str(x) for x in cn]), ','.join([str(x) for x in al]), ','.join([str(x) for x in hg]), strnow)
     elif 'ycsb_scaling' in exp:
         cmd='sh result.sh -a ycsb_scaling -n {} -c {} -t {} --ft {} --tt {}'.format(','.join([str(x) for x in cn]), ','.join([str(x) for x in al]), strnow, ','.join(fromtimelist), ','.join(totimelist))
     elif 'ycsb_scaling_tcp' in exp:

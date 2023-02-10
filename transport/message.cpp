@@ -1127,6 +1127,15 @@ uint64_t PrepareMessage::get_size() {
 #if CC_ALG == TICTOC
   size += sizeof(uint64_t);
 #endif
+#if CC_ALG == RDMA_MAAT_H
+  size += sizeof(size_t);
+  size += sizeof(uint64_t) * uncommitted_reads.size();
+  size += sizeof(size_t);
+  size += sizeof(uint64_t) * uncommitted_writes.size();
+  size += sizeof(size_t);
+  size += sizeof(uint64_t) * uncommitted_writes_y.size();
+  size += sizeof(uint64_t) * 2;
+#endif
   return size;
 }
 
@@ -1135,15 +1144,75 @@ void PrepareMessage::copy_from_txn(TxnManager * txn) {
 #if CC_ALG == TICTOC
   _min_commit_ts = txn->_min_commit_ts;
 #endif
+#if CC_ALG == RDMA_MAAT_H
+  uncommitted_reads.init(txn->uncommitted_reads.size());
+  for(auto iter = txn->uncommitted_reads.begin(); iter != txn->uncommitted_reads.end(); ++iter){
+    uncommitted_reads.add(*iter);
+  }
+  uncommitted_writes.init(txn->uncommitted_writes.size());
+  for(auto iter = txn->uncommitted_writes.begin(); iter != txn->uncommitted_writes.end(); ++iter){
+    uncommitted_writes.add(*iter);
+  }
+  uncommitted_writes_y.init(txn->uncommitted_writes_y.size());
+  for(auto iter = txn->uncommitted_writes_y.begin(); iter != txn->uncommitted_writes_y.end(); ++iter){
+    uncommitted_writes_y.add(*iter);
+  }
+  greatest_write_timestamp = txn->greatest_write_timestamp;
+  greatest_read_timestamp = txn->greatest_read_timestamp;
+#endif
 }
 void PrepareMessage::copy_to_txn(TxnManager * txn) {
   Message::mcopy_to_txn(txn);
+#if CC_ALG == RDMA_MAAT_H
+  for (int i = 0; i < uncommitted_reads.size();i++) {
+    txn->uncommitted_reads.insert(uncommitted_reads[i]);
+  }
+  for (int i = 0; i < uncommitted_writes.size();i++) {
+    txn->uncommitted_writes.insert(uncommitted_writes[i]);
+  }
+  for (int i = 0; i < uncommitted_writes_y.size();i++) {
+    txn->uncommitted_writes_y.insert(uncommitted_writes_y[i]);
+  }
+  txn->greatest_write_timestamp = txn->greatest_write_timestamp > greatest_write_timestamp ?
+                                  txn->greatest_write_timestamp : greatest_write_timestamp;
+  txn->greatest_read_timestamp = txn->greatest_read_timestamp > greatest_read_timestamp ?
+                                  txn->greatest_read_timestamp : greatest_read_timestamp;
+#endif
 }
 void PrepareMessage::copy_from_buf(char * buf) {
   Message::mcopy_from_buf(buf);
   uint64_t ptr = Message::mget_size();
 #if CC_ALG == TICTOC
   COPY_VAL(_min_commit_ts,buf,ptr);
+#endif
+#if CC_ALG == RDMA_MAAT_H
+  size_t size;
+  COPY_VAL(size,buf,ptr);
+  uncommitted_reads.init(size);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t part;
+    COPY_VAL(part,buf,ptr);
+    uncommitted_reads.add(part);
+  }
+
+  COPY_VAL(size,buf,ptr);
+  uncommitted_writes.init(size);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t part;
+    COPY_VAL(part,buf,ptr);
+    uncommitted_writes.add(part);
+  }
+
+  COPY_VAL(size,buf,ptr);
+  uncommitted_writes_y.init(size);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t part;
+    COPY_VAL(part,buf,ptr);
+    uncommitted_writes_y.add(part);
+  }
+
+  COPY_VAL(greatest_write_timestamp,buf,ptr);
+  COPY_VAL(greatest_read_timestamp,buf,ptr);
 #endif
   assert(ptr == get_size());
 }
@@ -1153,6 +1222,28 @@ void PrepareMessage::copy_to_buf(char * buf) {
   uint64_t ptr = Message::mget_size();
 #if CC_ALG == TICTOC
   COPY_BUF(buf,_min_commit_ts,ptr);
+#endif
+#if CC_ALG == RDMA_MAAT_H
+  size_t size = uncommitted_reads.size();
+  COPY_BUF(buf,size,ptr);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t tid = uncommitted_reads[i];
+    COPY_BUF(buf,tid,ptr);
+  }
+  size = uncommitted_writes.size();
+  COPY_BUF(buf,size,ptr);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t tid = uncommitted_writes[i];
+    COPY_BUF(buf,tid,ptr);
+  }
+  size = uncommitted_writes_y.size();
+  COPY_BUF(buf,size,ptr);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t tid = uncommitted_writes_y[i];
+    COPY_BUF(buf,tid,ptr);
+  }
+  COPY_BUF(buf,greatest_write_timestamp,ptr);
+  COPY_BUF(buf,greatest_read_timestamp,ptr);
 #endif
   assert(ptr == get_size());
 }
@@ -1266,6 +1357,15 @@ uint64_t QueryResponseMessage::get_size() {
 #if CC_ALG == TICTOC
   size += sizeof(uint64_t);
 #endif
+#if CC_ALG == RDMA_MAAT_H
+  size += sizeof(size_t);
+  size += sizeof(uint64_t) * uncommitted_reads.size();
+  size += sizeof(size_t);
+  size += sizeof(uint64_t) * uncommitted_writes.size();
+  size += sizeof(size_t);
+  size += sizeof(uint64_t) * uncommitted_writes_y.size();
+  size += sizeof(uint64_t) * 2;
+#endif
   //size += sizeof(uint64_t);
   return size;
 }
@@ -1276,11 +1376,42 @@ void QueryResponseMessage::copy_from_txn(TxnManager * txn) {
 #if CC_ALG == TICTOC
   _min_commit_ts = txn->_min_commit_ts;
 #endif
+#if CC_ALG == RDMA_MAAT_H
+  uncommitted_reads.init(txn->uncommitted_reads.size());
+  for(auto iter = txn->uncommitted_reads.begin(); iter != txn->uncommitted_reads.end(); ++iter){
+    uncommitted_reads.add(*iter);
+  }
+  uncommitted_writes.init(txn->uncommitted_writes.size());
+  for(auto iter = txn->uncommitted_writes.begin(); iter != txn->uncommitted_writes.end(); ++iter){
+    uncommitted_writes.add(*iter);
+  }
+  uncommitted_writes_y.init(txn->uncommitted_writes_y.size());
+  for(auto iter = txn->uncommitted_writes_y.begin(); iter != txn->uncommitted_writes_y.end(); ++iter){
+    uncommitted_writes_y.add(*iter);
+  }
+  greatest_write_timestamp = txn->greatest_write_timestamp;
+  greatest_read_timestamp = txn->greatest_read_timestamp;
+#endif
 }
 
 void QueryResponseMessage::copy_to_txn(TxnManager * txn) {
   Message::mcopy_to_txn(txn);
   //query->rc = rc;
+#if CC_ALG == RDMA_MAAT_H
+  for (int i = 0; i < uncommitted_reads.size();i++) {
+    txn->uncommitted_reads.insert(uncommitted_reads[i]);
+  }
+  for (int i = 0; i < uncommitted_writes.size();i++) {
+    txn->uncommitted_writes.insert(uncommitted_writes[i]);
+  }
+  for (int i = 0; i < uncommitted_writes_y.size();i++) {
+    txn->uncommitted_writes_y.insert(uncommitted_writes_y[i]);
+  }
+  txn->greatest_write_timestamp = txn->greatest_write_timestamp > greatest_write_timestamp ?
+                                  txn->greatest_write_timestamp : greatest_write_timestamp;
+  txn->greatest_read_timestamp = txn->greatest_read_timestamp > greatest_read_timestamp ?
+                                  txn->greatest_read_timestamp : greatest_read_timestamp;
+#endif
 }
 
 void QueryResponseMessage::copy_from_buf(char * buf) {
@@ -1290,7 +1421,35 @@ void QueryResponseMessage::copy_from_buf(char * buf) {
 #if CC_ALG == TICTOC
   COPY_VAL(_min_commit_ts,buf,ptr);
 #endif
+#if CC_ALG == RDMA_MAAT_H
+  size_t size;
+  COPY_VAL(size,buf,ptr);
+  uncommitted_reads.init(size);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t part;
+    COPY_VAL(part,buf,ptr);
+    uncommitted_reads.add(part);
+  }
 
+  COPY_VAL(size,buf,ptr);
+  uncommitted_writes.init(size);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t part;
+    COPY_VAL(part,buf,ptr);
+    uncommitted_writes.add(part);
+  }
+
+  COPY_VAL(size,buf,ptr);
+  uncommitted_writes_y.init(size);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t part;
+    COPY_VAL(part,buf,ptr);
+    uncommitted_writes_y.add(part);
+  }
+
+  COPY_VAL(greatest_write_timestamp,buf,ptr);
+  COPY_VAL(greatest_read_timestamp,buf,ptr);
+#endif
  assert(ptr == get_size());
 }
 
@@ -1300,6 +1459,28 @@ void QueryResponseMessage::copy_to_buf(char * buf) {
   COPY_BUF(buf,rc,ptr);
 #if CC_ALG == TICTOC
   COPY_BUF(buf,_min_commit_ts,ptr);
+#endif
+#if CC_ALG == RDMA_MAAT_H
+  size_t size = uncommitted_reads.size();
+  COPY_BUF(buf,size,ptr);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t tid = uncommitted_reads[i];
+    COPY_BUF(buf,tid,ptr);
+  }
+  size = uncommitted_writes.size();
+  COPY_BUF(buf,size,ptr);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t tid = uncommitted_writes[i];
+    COPY_BUF(buf,tid,ptr);
+  }
+  size = uncommitted_writes_y.size();
+  COPY_BUF(buf,size,ptr);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t tid = uncommitted_writes_y[i];
+    COPY_BUF(buf,tid,ptr);
+  }
+  COPY_BUF(buf,greatest_write_timestamp,ptr);
+  COPY_BUF(buf,greatest_read_timestamp,ptr);
 #endif
  assert(ptr == get_size());
 }
@@ -1461,6 +1642,9 @@ uint64_t YCSBQueryMessage::get_size() {
   uint64_t size = QueryMessage::get_size();
   size += sizeof(size_t);
   size += sizeof(ycsb_request) * requests.size();
+  #if RDMA_SIDED_EXP
+  size += RDMA_SIDED_LENGTH;
+  #endif
   return size;
 }
 
@@ -1498,7 +1682,10 @@ void YCSBQueryMessage::copy_from_buf(char * buf) {
     ASSERT(req->key < g_synth_table_size);
     requests.add(req);
   }
- assert(ptr == get_size());
+  #if RDMA_SIDED_EXP
+  ptr += RDMA_SIDED_LENGTH;
+  #endif
+  assert(ptr == get_size());
 }
 
 void YCSBQueryMessage::copy_to_buf(char * buf) {
@@ -1510,7 +1697,10 @@ void YCSBQueryMessage::copy_to_buf(char * buf) {
     ycsb_request * req = requests[i];
     COPY_BUF(buf,*req,ptr);
   }
- assert(ptr == get_size());
+  #if RDMA_SIDED_EXP
+  ptr += RDMA_SIDED_LENGTH;
+  #endif
+  assert(ptr == get_size());
 }
 /************************/
 

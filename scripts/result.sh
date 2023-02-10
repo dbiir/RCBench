@@ -1,4 +1,4 @@
-set -x
+# set -x
 
 PHASE=5
 Latency="trans_total_run_time
@@ -87,6 +87,21 @@ do
             shift
             shift
             ;;
+        --hg)
+            HG=($(echo $2 | tr ',' ' '))
+            shift
+            shift
+            ;;
+        --one_sided_cnt)
+            ONE_SIDED_CNT=($(echo $2 | tr ',' ' '))
+            shift
+            shift
+            ;;
+        --sided_size)
+            SIDED_SIZE=($(echo $2 | tr ',' ' '))
+            shift
+            shift
+            ;;
         *)
             shift
             ;;
@@ -164,6 +179,12 @@ ArgsType() {
     elif [[ "${TEST_TYPE}" == 'ycsb_writes' ]]
     then
         args=("${WR[@]}")
+    elif [[ "${TEST_TYPE}" == 'ycsb_one_sided_size' ]]
+    then
+        args=("${SIDED_SIZE[@]}")
+    elif [[ "${TEST_TYPE}" == 'ycsb_hg' ]]
+    then
+        args=("${HG[@]}")
     elif [[ "${TEST_TYPE}" == 'tpcc_scaling' ]]
     then
         args=("${NUMBEROFNODE[@]}")
@@ -204,6 +225,12 @@ FileName() {
     elif [[ "${TEST_TYPE}" == 'ycsb_writes' ]]
     then
         f=$(ls ${RESULT_PATH} | grep -v .cfg | grep ${cc} | grep _TWR-${arg}_ | grep ^${i}_)
+    elif [[ "${TEST_TYPE}" == 'ycsb_one_sided_size' ]]
+    then
+        f=$(ls ${RESULT_PATH} | grep -v .cfg | grep ${cc} | grep _RDMA_SIDED_LENGTH-${arg}_ | grep ^${i}_)
+    elif [[ "${TEST_TYPE}" == 'ycsb_hg' ]]
+    then
+        f=$(ls ${RESULT_PATH} | grep -v .cfg | grep ${cc} | grep _HG_ID-${arg}_ | grep ^${i}_)
     elif [[ "${TEST_TYPE}" == 'tpcc_scaling' ]]
     then
         f=$(ls ${RESULT_PATH} | grep -v .cfg | grep [0-9]_${cc}_ | grep _N-${arg}_ | grep ^${i}_)
