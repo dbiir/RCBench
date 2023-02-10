@@ -17,7 +17,7 @@
 #ifndef ROW_RDMA_MAAT_H
 #define ROW_RDMA_MAAT_H
 #include "routine.h"
-#if CC_ALG == RDMA_MAAT
+#if CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H
 
 class Row_rdma_maat {
 public:

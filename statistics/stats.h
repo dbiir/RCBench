@@ -244,6 +244,10 @@ public:
   uint64_t * work_queue_dwq_cnt;
   uint64_t * work_queue_etx_cnt;
   uint64_t * work_queue_dtx_cnt;
+  // RDMA
+  // double one_sided_time;
+  std::vector<double> one_sided_time;
+  std::vector<double> two_sided_time;
   // IO
   double msg_queue_delay_time;
   uint64_t msg_queue_cnt;

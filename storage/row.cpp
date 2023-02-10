@@ -202,26 +202,25 @@ void row_t::init_manager(row_t * row) {
 #elif CC_ALG == CNULL
 	manager = (Row_null *) mem_allocator.align_alloc(sizeof(Row_null));
 #elif CC_ALG == SILO
-  manager = (Row_silo *) mem_allocator.align_alloc(sizeof(Row_silo));
+  	manager = (Row_silo *) mem_allocator.align_alloc(sizeof(Row_silo));
 #elif CC_ALG == RDMA_SILO
-  manager = (Row_rdma_silo *) mem_allocator.align_alloc(sizeof(Row_rdma_silo));
+  	manager = (Row_rdma_silo *) mem_allocator.align_alloc(sizeof(Row_rdma_silo));
 #elif CC_ALG == RDMA_MOCC
-  manager = (Row_rdma_mocc *) mem_allocator.align_alloc(sizeof(Row_rdma_mocc));
+  	manager = (Row_rdma_mocc *) mem_allocator.align_alloc(sizeof(Row_rdma_mocc));
 #elif CC_ALG == RDMA_NO_WAIT || CC_ALG == RDMA_NO_WAIT2 || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT
-  manager = (Row_rdma_2pl *) mem_allocator.align_alloc(sizeof(Row_rdma_2pl));
+ 	manager = (Row_rdma_2pl *) mem_allocator.align_alloc(sizeof(Row_rdma_2pl));
 #elif CC_ALG == RDMA_DSLR_NO_WAIT
-  manager = (Row_rdma_dslr_no_wait *)mem_allocator.align_alloc(sizeof(Row_rdma_dslr_no_wait));
+  	manager = (Row_rdma_dslr_no_wait *)mem_allocator.align_alloc(sizeof(Row_rdma_dslr_no_wait));
 #elif CC_ALG == RDMA_MVCC
-  manager = (Row_rdma_mvcc *) mem_allocator.align_alloc(sizeof(Row_rdma_mvcc));
-
-#elif CC_ALG == RDMA_MAAT
-  manager = (Row_rdma_maat *) mem_allocator.align_alloc(sizeof(Row_rdma_maat));
+  	manager = (Row_rdma_mvcc *) mem_allocator.align_alloc(sizeof(Row_rdma_mvcc));
+#elif CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H
+  	manager = (Row_rdma_maat *) mem_allocator.align_alloc(sizeof(Row_rdma_maat));
 #elif CC_ALG ==RDMA_TS1
-  manager = (Row_rdma_ts1 *) mem_allocator.align_alloc(sizeof(Row_rdma_ts1));
+  	manager = (Row_rdma_ts1 *) mem_allocator.align_alloc(sizeof(Row_rdma_ts1));
 #elif CC_ALG ==RDMA_TS
-  manager = (Row_rdma_ts *) mem_allocator.align_alloc(sizeof(Row_rdma_ts));
+  	manager = (Row_rdma_ts *) mem_allocator.align_alloc(sizeof(Row_rdma_ts));
 #elif CC_ALG == RDMA_CICADA
-  manager = (Row_rdma_cicada *) mem_allocator.align_alloc(sizeof(Row_rdma_cicada));
+  	manager = (Row_rdma_cicada *) mem_allocator.align_alloc(sizeof(Row_rdma_cicada));
 #elif CC_ALG == CICADA
 	manager = (Row_cicada *) mem_allocator.align_alloc(sizeof(Row_cicada));
 #endif
@@ -419,20 +418,20 @@ RC row_t::get_row(yield_func_t &yield,access_t type, TxnManager *txn, Access *ac
    access->data = txn->cur_row;
    goto end;
 #endif
-#if CC_ALG == MAAT || CC_ALG == RDMA_MAAT
-  uint64_t init_time = get_sys_clock();
-  DEBUG_M("row_t::get_row MAAT alloc \n");
+#if CC_ALG == MAAT || CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H
+	uint64_t init_time = get_sys_clock();
+	DEBUG_M("row_t::get_row MAAT alloc \n");
 	txn->cur_row = (row_t *) mem_allocator.alloc(row_t::get_row_size(tuple_size));
 	txn->cur_row->init(get_table(), get_part_id());
-  INC_STATS(txn->get_thd_id(), trans_cur_row_init_time, get_sys_clock() - init_time);
+  	INC_STATS(txn->get_thd_id(), trans_cur_row_init_time, get_sys_clock() - init_time);
 
-  rc = this->manager->access(type,txn);
+	rc = this->manager->access(type,txn);
 
-  uint64_t copy_time = get_sys_clock();
-  txn->cur_row->copy(this);
+	uint64_t copy_time = get_sys_clock();
+	txn->cur_row->copy(this);
 	access->data = txn->cur_row;
 	//assert(rc == RCOK);
-  INC_STATS(txn->get_thd_id(), trans_cur_row_copy_time, get_sys_clock() - copy_time);
+  	INC_STATS(txn->get_thd_id(), trans_cur_row_copy_time, get_sys_clock() - copy_time);
 	goto end;
 #endif
 #if CC_ALG == CICADA
@@ -954,7 +953,7 @@ uint64_t row_t::return_row(RC rc, access_t type, TxnManager *txn, row_t *row) {
 	DEBUG_M("row_t::return_row Maat free \n");
 	mem_allocator.free(row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 	return 0;
-#elif CC_ALG == MAAT || CC_ALG == RDMA_MAAT || CC_ALG == RDMA_CICADA
+#elif CC_ALG == MAAT || CC_ALG == RDMA_MAAT || CC_ALG == RDMA_CICADA || CC_ALG == RDMA_MAAT_H
 	if (row != NULL) {
 		row->free_row();
 	    DEBUG_M("row_t::return_row Maat free \n");

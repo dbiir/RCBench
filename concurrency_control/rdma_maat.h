@@ -45,7 +45,7 @@ struct MAATTableNode {
 	MAATState state;
 };
 struct RdmaTxnTableNode{
-#if CC_ALG == RDMA_MAAT
+#if CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H
 	uint64_t _lock;
 	MAATTableNode nodes[MAAT_NODES_COUNT];
 	uint64_t index;
@@ -131,7 +131,7 @@ public:
 	void init();
 	void init(uint64_t thd_id, uint64_t key);
 	void release(uint64_t thd_id, uint64_t key);
-#if CC_ALG == RDMA_MAAT
+#if CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H
 	bool local_is_key(uint64_t key);
 	uint64_t local_get_lower(uint64_t key);
 	uint64_t local_get_upper(uint64_t key);
@@ -181,7 +181,7 @@ private:
 	RdmaTxnTableNode *table;
 	sem_t 	_semaphore;
 };
-#if CC_ALG == RDMA_MAAT
+#if CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H
 
 class TxnManager;
 

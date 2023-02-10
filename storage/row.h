@@ -191,7 +191,7 @@ public:
 		volatile uint64_t ts[LOCK_LENGTH];
 		volatile uint64_t lock_owner[LOCK_LENGTH];
 		Row_rdma_2pl * manager;
-	#elif CC_ALG == RDMA_MAAT
+	#elif CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H
 	    volatile uint64_t _tid_word;
 		Row_rdma_maat * manager;
         uint64_t ucreads_len;

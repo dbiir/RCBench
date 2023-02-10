@@ -98,7 +98,7 @@ class RdmaTxnTable;
 #if CC_ALG == RDMA_DSLR_NO_WAIT
 class RDMA_dslr_no_wait;
 #endif
-#if CC_ALG == RDMA_MAAT
+#if CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H
 class RDMA_Maat;
 class RdmaTxnTable;
 #endif
@@ -190,7 +190,7 @@ extern RdmaTxnTable rdma_txn_table;
 #if CC_ALG == RDMA_DSLR_NO_WAIT
 extern  RDMA_dslr_no_wait dslr_man;
 #endif
-#if CC_ALG == RDMA_MAAT
+#if CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H
 extern RDMA_Maat rmaat_man;
 extern RdmaTxnTable rdma_txn_table;
 #endif

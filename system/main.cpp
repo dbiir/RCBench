@@ -249,7 +249,7 @@ int main(int argc, char *argv[]) {
 	maat_man.init();
 	printf("Done\n");
 #endif
-#if CC_ALG == RDMA_MAAT
+#if CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H
 	printf("Initializing Time Table... ");
 	fflush(stdout);
 	rdma_txn_table.init();

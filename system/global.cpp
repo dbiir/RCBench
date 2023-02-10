@@ -118,7 +118,7 @@ RdmaTxnTable rdma_txn_table;
 #if CC_ALG == RDMA_DSLR_NO_WAIT
 RDMA_dslr_no_wait dslr_man;
 #endif
-#if CC_ALG == RDMA_MAAT
+#if CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H
 RDMA_Maat rmaat_man;
 RdmaTxnTable rdma_txn_table;
 #endif

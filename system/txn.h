@@ -73,7 +73,7 @@ public:
 	uint64_t    location;   //node id of server the data location
 	uint64_t    offset;
 #endif
-#if CC_ALG == RDMA_MAAT || CC_ALG ==RDMA_TS1 || CC_ALG == RDMA_CICADA || CC_ALG == RDMA_CNULL || CC_ALG == RDMA_TS
+#if CC_ALG == RDMA_MAAT || CC_ALG ==RDMA_TS1 || CC_ALG == RDMA_CICADA || CC_ALG == RDMA_CNULL || CC_ALG == RDMA_TS || CC_ALG == RDMA_MAAT_H
 	uint64_t 	key;
     uint64_t	location;
 	uint64_t	offset;
@@ -121,7 +121,7 @@ public:
 										uint64_t timespan_short);
 	uint64_t starttime;
 	uint64_t restart_starttime;
-  uint64_t init_complete_time;
+  	uint64_t init_complete_time;
 	uint64_t wait_starttime;
 	uint64_t write_cnt;
 	uint64_t abort_cnt;
@@ -158,6 +158,10 @@ public:
 
 	double lat_network_time_start;
 	double lat_other_time_start;
+
+	// for two-sided
+	uint64_t two_sided_start_time;
+	uint64_t two_sided_end_time;
 };
 
 /*
@@ -220,8 +224,33 @@ public:
 	void release_locks(yield_func_t &yield, RC rc, uint64_t cor_id);
 
 	bool rdma_one_side() {
-	if (CC_ALG == RDMA_SILO || CC_ALG == RDMA_MVCC || CC_ALG == RDMA_NO_WAIT || CC_ALG == RDMA_NO_WAIT2 || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == RDMA_MAAT || CC_ALG ==RDMA_TS1 ||CC_ALG ==RDMA_TS || CC_ALG == RDMA_CICADA || CC_ALG == RDMA_CNULL || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_DSLR_NO_WAIT || CC_ALG == RDMA_MOCC) return true;
-	else return false;
+		if (CC_ALG == RDMA_SILO || CC_ALG == RDMA_MVCC || CC_ALG == RDMA_NO_WAIT || CC_ALG == RDMA_NO_WAIT2 || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == RDMA_MAAT || CC_ALG ==RDMA_TS1 ||CC_ALG ==RDMA_TS || CC_ALG == RDMA_CICADA || CC_ALG == RDMA_CNULL || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_DSLR_NO_WAIT || CC_ALG == RDMA_MOCC) return true;
+		else return false;
+	}
+
+	bool rdma_rw_one_sided() {
+		// 如果是maat, 而且读写阶段用单边
+		if (CC_ALG == RDMA_MAAT_H ||
+			CC_ALG == RDMA_NO_WAIT_H){
+			if (RDMA_ONE_MAAT_RW) return true;
+		}
+		return false;
+	}
+	bool rdma_va_one_sided() {
+		// 如果是maat, 而且验证阶段用单边
+		if (CC_ALG == RDMA_MAAT_H ||
+			CC_ALG == RDMA_NO_WAIT_H){
+			if (RDMA_ONE_MAAT_VA) return true;
+		}
+		return false;
+	}
+	bool rdma_co_one_sided() {
+		// 如果是maat, 而且提交阶段用单边
+		if (CC_ALG == RDMA_MAAT_H ||
+			CC_ALG == RDMA_NO_WAIT_H){
+			if (RDMA_ONE_MAAT_CO) return true;
+		}
+		return false;
 	}
 
     uint64_t get_part_num(uint64_t num,uint64_t part);
@@ -363,7 +392,7 @@ public:
 	void set_commit_timestamp(uint64_t timestamp) {commit_timestamp = timestamp;}
 	uint64_t greatest_write_timestamp;
 	uint64_t greatest_read_timestamp;
-#if CC_ALG == RDMA_MAAT
+#if CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H
 	std::set<uint64_t> uncommitted_reads;
 	std::set<uint64_t> uncommitted_writes;
 	std::set<uint64_t> uncommitted_writes_y;

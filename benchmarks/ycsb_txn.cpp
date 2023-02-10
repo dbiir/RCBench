@@ -159,8 +159,7 @@ RC YCSBTxnManager::run_txn(yield_func_t &yield, uint64_t cor_id) {
 #endif
 			rc = start_commit(yield, cor_id);
 		}
-		else if(rc == Abort)
-		rc = start_abort(yield, cor_id);
+		else if(rc == Abort) rc = start_abort(yield, cor_id);
 	} else if(rc == Abort){
 		rc = abort(yield, cor_id);
 	}
@@ -253,7 +252,6 @@ itemid_t* YCSBTxnManager::ycsb_read_remote_index(yield_func_t &yield, ycsb_reque
 
 RC YCSBTxnManager::send_remote_one_side_request(yield_func_t &yield, ycsb_request * req, row_t *& row_local, uint64_t cor_id) {
 	// get the index of row to be operated
-	
 	itemid_t * m_item;
 #if BATCH_INDEX_AND_READ
 	m_item = reqId_index.find(next_record_id)->second;
@@ -263,7 +261,8 @@ RC YCSBTxnManager::send_remote_one_side_request(yield_func_t &yield, ycsb_reques
 	uint64_t part_id = _wl->key_to_part( req->key );
     uint64_t loc = GET_NODE_ID(part_id);
 	assert(loc != g_node_id);
-    
+	YCSBQuery* ycsb_query = (YCSBQuery*) query;
+	ycsb_query->partitions_touched.add_unique(part_id);
     RC rc = RCOK;
     uint64_t version = 0;
 
@@ -280,7 +279,8 @@ RC YCSBTxnManager::send_remote_request() {
 #if USE_RDMA == CHANGE_MSG_QUEUE
 	tport_man.rdma_thd_send_msg(get_thd_id(), dest_node_id, Message::create_message(this,RQRY));
 #else
-    // DEBUG("ycsb send remote request %ld, %ld\n",txn->txn_id,txn->batch_id);
+    DEBUG_T("ycsb send remote request %ld, %ld\n",txn->txn_id,txn->batch_id);
+	txn_stats.two_sided_start_time = get_sys_clock();
     msg_queue.enqueue(get_thd_id(),Message::create_message(this,RQRY),dest_node_id);
 #endif
 
@@ -310,40 +310,42 @@ RC YCSBTxnManager::run_txn_state(yield_func_t &yield, uint64_t cor_id) {
 	
 	RC rc = RCOK;
 	switch (state) {
-	case YCSB_0 :
+		case YCSB_0 :
 #if CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == RDMA_WOUND_WAIT
-        // printf("read local WOUNDState:%ld\n", rdma_txn_table.local_get_state(get_thd_id(),txn->txn_id));
-		if(rdma_txn_table.local_get_state(get_thd_id(),txn->txn_id) == WOUND_ABORTING) {
-			rc = Abort;
-		} else {
+			// printf("read local WOUNDState:%ld\n", rdma_txn_table.local_get_state(get_thd_id(),txn->txn_id));
+			if(rdma_txn_table.local_get_state(get_thd_id(),txn->txn_id) == WOUND_ABORTING) {
+				rc = Abort;
+			} else {
 #endif
-		if(loc) {
-			rc = run_ycsb_0(yield,req,row,cor_id);
-		} else if (rdma_one_side()) {
-			// printf("%ld:%ld:%ld:%ld in run txn    %ld:%ld\n",cor_id,get_txn_id(), req->key, next_record_id, GET_NODE_ID(part_id), g_node_id);
-			rc = send_remote_one_side_request(yield, req, row, cor_id);
-		} else {
-			rc = send_remote_request();
-		}
+			if(loc) {
+				// printf("%ld:%ld:%ld:%ld in run txn loc %ld:%ld\n",cor_id,get_txn_id(), req->key, next_record_id, GET_NODE_ID(part_id), g_node_id);
+				rc = run_ycsb_0(yield,req,row,cor_id);
+			} else if (rdma_one_side()) {
+			// } else if (rdma_one_side() || rdma_rw_one_sided()) {
+				// printf("%ld:%ld:%ld:%ld in run txn remote %ld:%ld\n",cor_id,get_txn_id(), req->key, next_record_id, GET_NODE_ID(part_id), g_node_id);
+				rc = send_remote_one_side_request(yield, req, row, cor_id);
+			} else {
+				// printf("%ld:%ld:%ld:%ld in run txn remote through two %ld:%ld\n",cor_id,get_txn_id(), req->key, next_record_id, GET_NODE_ID(part_id), g_node_id);
+				rc = send_remote_request();
+			}
 #if CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == RDMA_WOUND_WAIT
-		}
+			}
 #endif
-	  break;
-	case YCSB_1 :
-		//read local row,for message queue by TCP/IP,write set has actually been written in this point,
-		//but for rdma, it was written in local, the remote data will actually be written when COMMIT
-		rc = run_ycsb_1(req->acctype,row);  
-		break;
-	case YCSB_FIN :
-		state = YCSB_FIN;
-		break;
-	default:
-		assert(false);
-  }
-
-  if (rc == RCOK) next_ycsb_state();
-
-  return rc;
+			break;
+		case YCSB_1 :
+			//read local row,for message queue by TCP/IP,write set has actually been written in this point,
+			//but for rdma, it was written in local, the remote data will actually be written when COMMIT
+			rc = run_ycsb_1(req->acctype,row);  
+			break;
+		case YCSB_FIN :
+			state = YCSB_FIN;
+			break;
+		default:
+			assert(false);
+  	}
+	// printf("txn %ld rc = %d\n", get_txn_id(), rc);
+  	if (rc == RCOK) next_ycsb_state();
+  	return rc;
 }
 
 RC YCSBTxnManager::run_ycsb_0(yield_func_t &yield,ycsb_request * req,row_t *& row_local,uint64_t cor_id) {

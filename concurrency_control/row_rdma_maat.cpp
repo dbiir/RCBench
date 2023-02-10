@@ -24,18 +24,14 @@ limitations under the License.
 #include "qps/op.hh"
 #include "rdma.h"
 #include "routine.h"
-#if CC_ALG == RDMA_MAAT
+#if CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H
 void Row_rdma_maat::init(row_t * row) {
 	_row = row;
-
 	maat_avail = true;
-	
-
 	//uncommitted_writes = new std::set<uint64_t>();
 	//uncommitted_reads = new std::set<uint64_t>();
 	//assert(uncommitted_writes->begin() == uncommitted_writes->end());
 	//assert(uncommitted_writes->size() == 0);
-
 }
 
 bool Row_rdma_maat::local_cas_lock(TxnManager * txnMng , uint64_t info, uint64_t new_info){
@@ -83,7 +79,7 @@ RC Row_rdma_maat::access(access_t type, TxnManager * txn) {
 }
 
 RC Row_rdma_maat::read_and_prewrite(TxnManager * txn) {
-	assert (CC_ALG == RDMA_MAAT);
+	assert (CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H);
 	RC rc = RCOK;
 
 	uint64_t mtx_wait_starttime = get_sys_clock();
@@ -179,7 +175,7 @@ RC Row_rdma_maat::read_and_prewrite(TxnManager * txn) {
 
 
 RC Row_rdma_maat::read(TxnManager * txn) {
-	assert (CC_ALG == RDMA_MAAT);
+	assert (CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H);
 	RC rc = RCOK;
 
 	uint64_t mtx_wait_starttime = get_sys_clock();
@@ -236,7 +232,7 @@ RC Row_rdma_maat::read(TxnManager * txn) {
 }
 
 RC Row_rdma_maat::prewrite(TxnManager * txn) {
-	assert (CC_ALG == RDMA_MAAT);
+	assert (CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H);
 	RC rc = RCOK;
 
 	uint64_t mtx_wait_starttime = get_sys_clock();

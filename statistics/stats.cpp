@@ -935,6 +935,45 @@ void Stats_thd::print(FILE * outf, bool prog) {
           worker_yield_cnt, worker_waitcomp_cnt, worker_oneside_cnt, worker_activate_txn_time / BILLION,
           worker_deactivate_txn_time / BILLION, worker_release_msg_time / BILLION,
           worker_process_time / BILLION, worker_process_cnt, worker_process_avg_time / BILLION);
+
+  double avg_one_sided_time, avg_95th_one_sided_time = 0;
+  double avg_two_sided_time, avg_95th_two_sided_time = 0;
+  sort(one_sided_time.begin(),one_sided_time.end());
+  sort(two_sided_time.begin(),two_sided_time.end());
+  int count = 0;
+  for (int i = 0; i < one_sided_time.size(); i++) {
+    avg_one_sided_time += one_sided_time[i];
+    // if (i < 0.05 * one_sided_time.size()) {
+    if (i > 0.95 * one_sided_time.size()) {
+      avg_95th_one_sided_time += one_sided_time[i];
+      count++;
+    }
+  }
+  avg_one_sided_time = avg_one_sided_time / one_sided_time.size();
+  avg_95th_one_sided_time = avg_95th_one_sided_time / count;
+
+  count = 0;
+  for (int i = 0; i < two_sided_time.size(); i++) {
+    avg_two_sided_time += two_sided_time[i];
+    if (i > 0.95 * two_sided_time.size()) {
+      avg_95th_two_sided_time += two_sided_time[i];
+      count++;
+    }
+  }
+  avg_two_sided_time = avg_two_sided_time / two_sided_time.size();
+  avg_95th_two_sided_time = avg_95th_two_sided_time / count;
+
+  fprintf(outf,
+    ",avg_one_sided_time=%f"
+    ",avg_95th_one_sided_time=%f"
+    ",avg_two_sided_time=%f"
+    ",avg_95th_two_sided_time=%f"
+    ",one_sided_time_size=%f"
+    ",two_sided_time_size=%f",
+    avg_one_sided_time/BILLION, avg_95th_one_sided_time/BILLION,
+    avg_two_sided_time/BILLION, avg_95th_two_sided_time/BILLION,
+    one_sided_time.size(),two_sided_time.size());
+
   for(uint64_t i = 0; i < NO_MSG; i ++) {
     fprintf(outf,
       ",proc_cnt_type%ld=%ld"
@@ -1638,6 +1677,9 @@ void Stats_thd::combine(Stats_thd * stats) {
     work_queue_etx_cnt[i]+=stats->work_queue_etx_cnt[i];
     work_queue_dtx_cnt[i]+=stats->work_queue_dtx_cnt[i];
   }
+
+  one_sided_time.insert(one_sided_time.end(),stats->one_sided_time.begin(),stats->one_sided_time.end());
+  two_sided_time.insert(two_sided_time.end(),stats->two_sided_time.begin(),stats->two_sided_time.end());
   // IO
   msg_queue_delay_time+=stats->msg_queue_delay_time;
   msg_queue_cnt+=stats->msg_queue_cnt;
