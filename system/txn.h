@@ -23,6 +23,7 @@
 #include "array.h"
 #include "row_rdma_maat.h"
 #include "rdma_maat.h"
+#include "rdma_timetable.h"
 #include "transport/message.h"
 #include "worker_thread.h"
 #include "routine.h"
@@ -54,29 +55,25 @@ public:
 #if CC_ALG == TICTOC
 	uint64_t    orig_wts;
 	uint64_t    orig_rts;
-	bool         locked;
+	bool        locked;
 #endif
 #if CC_ALG == SILO
 	ts_t 		tid;
 	// ts_t 		epoch;
 #endif
-#if CC_ALG == RDMA_SILO || CC_ALG == RDMA_MVCC || CC_ALG == RDMA_MOCC
-    uint64_t 	key;
-	ts_t 		tid;
-	ts_t		timestamp;
-    row_t * 	test_row;
-	uint64_t    location;
-	uint64_t    offset;
-    uint64_t    old_version_num;
-#endif
-#if CC_ALG == RDMA_NO_WAIT || CC_ALG == RDMA_NO_WAIT2 || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT ||  CC_ALG == RDMA_DSLR_NO_WAIT
+
+#if RDMA_ONE_SIDE
+	// one sided
+	uint64_t 	key;
 	uint64_t    location;   //node id of server the data location
 	uint64_t    offset;
+	bool		is_copy = false;
 #endif
-#if CC_ALG == RDMA_MAAT || CC_ALG ==RDMA_TS1 || CC_ALG == RDMA_CICADA || CC_ALG == RDMA_CNULL || CC_ALG == RDMA_TS || CC_ALG == RDMA_MAAT_H
-	uint64_t 	key;
-    uint64_t	location;
-	uint64_t	offset;
+
+#if CC_ALG == RDMA_SILO || CC_ALG == RDMA_MVCC || CC_ALG == RDMA_MOCC
+	ts_t 		tid;
+	ts_t		timestamp;
+    uint64_t    old_version_num;
 #endif
 #if CC_ALG == RDMA_TS1 
 	uint64_t	wid[LOCK_LENGTH];
@@ -85,6 +82,52 @@ public:
 	uint64_t	recordId;	//already readed record id
 #endif
 	void cleanup();
+	static size_t get_size() {
+		size_t access_size = sizeof(Access);
+		access_size += row_t::get_row_size(0);
+		// printf("access size %ld\n", access_size);
+		return access_size;
+	}
+	void copy(Access* access) {
+		memcpy((char*)this, (char*)access, sizeof(Access));
+		data = (row_t*)malloc(row_t::get_row_size(access->data->tuple_size));
+		memcpy(data, access->data, row_t::get_row_size(access->data->tuple_size));
+		assert(access->data != 0 && access->data->manager != 0);
+	}
+	void copy_to_buf(char* d, uint64_t& p){
+		memcpy(&(d[p]), (char*)this, sizeof(Access));
+		p += sizeof(Access);
+
+		memcpy(&(d[p]), data, row_t::get_row_size(0));
+		p += row_t::get_row_size(0);
+		assert(data != 0 && data->manager != 0);
+	}
+	void copy_from_buf(char* d, uint64_t& p) {
+		memcpy((char*)this, &(d[p]), sizeof(Access));
+		p += sizeof(Access);
+		orig_data = nullptr;
+		orig_row = nullptr;
+		data = (row_t*)malloc(row_t::get_row_size(ROW_DEFAULT_SIZE));
+		memcpy(data, &(d[p]), row_t::get_row_size(0));
+		p += row_t::get_row_size(0);
+		assert(data != 0 && data->manager != 0);
+	}
+	void to_one_sided_remote() {
+		// caculate the offset and location;
+		#if RDMA_ONE_SIDE
+		offset = (char*)orig_row - rdma_global_buffer;
+		// printf("access %ld one sided location %ld offset %ld orig_row %p\n", key,location,offset,orig_row);
+		#endif
+	}
+	void to_two_sided_local() {
+		// caculate the address of local origin row.
+		#if RDMA_ONE_SIDE
+		if (location == g_node_id) {
+			orig_row = (row_t*)(rdma_global_buffer + offset);
+			is_copy = true;
+		}
+		#endif
+	}
 };
 
 class Transaction {
@@ -96,6 +139,9 @@ public:
 	void release(uint64_t thd_id);
 	//vector<Access*> accesses;
 	Array<Access*> accesses;
+	// #if RDMA_ONE_SIDED_CO
+	// uint64_t send_accesses_cnt;
+	// #endif
 	uint64_t timestamp;
 	// For OCC and SSI
 	uint64_t start_timestamp;
@@ -230,26 +276,23 @@ public:
 
 	bool rdma_rw_one_sided() {
 		// 如果是maat, 而且读写阶段用单边
-		if (CC_ALG == RDMA_MAAT_H ||
-			CC_ALG == RDMA_NO_WAIT_H){
-			if (RDMA_ONE_MAAT_RW) return true;
-		}
+		if (RDMA_SIT < SIT_ONE_SIDE ) return false;
+		else if (RDMA_SIT < SIT_HG) return true;
+		if (RDMA_ONE_SIDED_RW) return true;
 		return false;
 	}
 	bool rdma_va_one_sided() {
 		// 如果是maat, 而且验证阶段用单边
-		if (CC_ALG == RDMA_MAAT_H ||
-			CC_ALG == RDMA_NO_WAIT_H){
-			if (RDMA_ONE_MAAT_VA) return true;
-		}
+		if (RDMA_SIT < SIT_ONE_SIDE ) return false;
+		else if (RDMA_SIT < SIT_HG) return true;
+		if (RDMA_ONE_SIDED_VA) return true;
 		return false;
 	}
 	bool rdma_co_one_sided() {
 		// 如果是maat, 而且提交阶段用单边
-		if (CC_ALG == RDMA_MAAT_H ||
-			CC_ALG == RDMA_NO_WAIT_H){
-			if (RDMA_ONE_MAAT_CO) return true;
-		}
+		if (RDMA_SIT < SIT_ONE_SIDE ) return false;
+		else if (RDMA_SIT < SIT_HG) return true;
+		if (RDMA_ONE_SIDED_CO) return true;
 		return false;
 	}
 
@@ -285,6 +328,7 @@ public:
 // #if CC_ALG == RDMA_MAAT
     RdmaTxnTableNode * read_remote_timetable(yield_func_t &yield,uint64_t target_server,uint64_t remote_offset, uint64_t cor_id);
 	char * read_remote_txntable(yield_func_t &yield,uint64_t target_server,uint64_t remote_offset, uint64_t cor_id);
+	RdmaTxnTableNode * read_remote_timetable_full(yield_func_t &yield, uint64_t target_server,uint64_t remote_offset,uint64_t cor_id);
 // #endif
 
     bool write_remote_row(yield_func_t &yield, uint64_t target_server, uint64_t operate_size, uint64_t remote_offset, char *local_buf, uint64_t cor_id);
@@ -334,6 +378,11 @@ public:
 	uint64_t        num_locks;
     int             write_set[100];
     int*            read_set;
+	RC find_tid_silo(ts_t _max_tid){
+		if (max_tid > _cur_tid)
+			_cur_tid = max_tid;
+		return RCOK;
+	}
 #endif
 #if CC_ALG == RDMA_MOCC
 	std::set<uint64_t> lock_set;

@@ -38,6 +38,11 @@ void REDLOG(const char *format, ...);
     fprintf(stdout,__VA_ARGS__); \
     fflush(stdout); \
   }
+#define DEBUG_C(...) \
+  if(DEBUG_CON) { \
+    fprintf(stdout,__VA_ARGS__); \
+    fflush(stdout); \
+  }
 #define DEBUG_FLUSH() \
   if(DEBUG_DISTR) { \
     fflush(stdout); \

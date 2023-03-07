@@ -60,7 +60,9 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
 	    return rc;
     }
     if(new_lock_info == 0){
-        printf("---线程号：%lu, 本地加锁失败!!!!!!锁位置: %u; %p , 事务号: %lu, 原lock_info: %lu, new_lock_info: %lu\n", txn->get_thd_id(), g_node_id, &row->_tid_word, txn->get_txn_id(), lock_info, new_lock_info);    
+        #if DEBUG_PRINTF
+        printf("---线程号：%lu, 本地加锁失败!!!!!!锁位置: %u; %ld , 事务号: %lu, 原lock_info: %lu, new_lock_info: %lu\n", txn->get_thd_id(), g_node_id, row->get_primary_key(), txn->get_txn_id(), lock_info, new_lock_info);    
+        #endif
     }
     assert(new_lock_info != 0);
     //RDMA CAS，不用本地CAS
@@ -72,7 +74,7 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
 
     if(try_lock != lock_info){ //如果CAS失败，原子性被破坏	
     #if DEBUG_PRINTF
-                printf("---atomic_retry_lock\n");
+        printf("---atomic_retry_lock\n");
     #endif 
         total_num_atomic_retry++;
         txn->num_atomic_retry++;
@@ -86,7 +88,7 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
     }         
     else{   //加锁成功
     #if DEBUG_PRINTF
-        printf("---线程号：%lu, 本地加锁成功，锁位置: %u; %p , 事务号: %lu, 原lock_info: %lu, new_lock_info: %lu\n", txn->get_thd_id(), g_node_id, &row->_tid_word, txn->get_txn_id(), lock_info, new_lock_info);
+        printf("---线程号：%lu, 本地加锁成功，锁位置: %u; %ld , 事务号: %lu, 原lock_info: %lu, new_lock_info: %lu\n", txn->get_thd_id(), g_node_id, row->get_primary_key(), txn->get_txn_id(), lock_info, new_lock_info);
     #endif
         rc = RCOK;
     } 
@@ -97,10 +99,15 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
     uint64_t try_lock = -1;
     try_lock = txn->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,1,cor_id);
 
-    if(try_lock != 0) rc = Abort; //加锁冲突，Abort	
+    if(try_lock != 0) {
+    #if DEBUG_PRINTF
+        printf("---线程号：%lu, 本地加锁失败，锁位置: %u; %ld , 事务号: %lu, 原lock_info: %ld, new_lock_info: 1\n", txn->get_thd_id(), g_node_id, row->get_primary_key(), txn->get_txn_id(), try_lock, try_lock);
+    #endif
+        rc = Abort; //加锁冲突，Abort	
+    }
     else{   //加锁成功
     #if DEBUG_PRINTF
-        printf("---线程号：%lu, 本地加锁成功，锁位置: %u; %p , 事务号: %lu, 原lock_info: 0, new_lock_info: 1\n", txn->get_thd_id(), g_node_id, &row->_tid_word, txn->get_txn_id());
+        printf("---线程号：%lu, 本地加锁成功，锁位置: %u; %ld , 事务号: %lu, 原lock_info: 0, new_lock_info: 1\n", txn->get_thd_id(), g_node_id, row->get_primary_key(), txn->get_txn_id());
     #endif
         rc = RCOK;
     } 
@@ -341,13 +348,13 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
 			} else {
 		    	local_buf = rdma_txn_table.remote_get_state(yield, txn, _row->lock_owner, cor_id);
                 memcpy(value, local_buf, sizeof(RdmaTxnTableNode));
-                state = value->state;
+                state = value->nodes[0].state;
 			}
 			if(tts <= try_lock && state != WOUND_COMMITTING && state != WOUND_ABORTING && is_wound == false){  //wound   
                 if(_row->lock_owner % g_node_cnt == g_node_id) {
 					rdma_txn_table.local_set_state(txn,txn->get_thd_id(), _row->lock_owner, WOUND_ABORTING);
 				} else {
-                    value->state = WOUND_ABORTING;
+                    value->nodes[0].state = WOUND_ABORTING;
 					rdma_txn_table.remote_set_state(yield, txn, _row->lock_owner, WOUND_ABORTING, cor_id);
                     // mem_allocator.free(value, sizeof(RdmaTxnTableNode));
 				}

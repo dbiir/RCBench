@@ -279,7 +279,7 @@ RC YCSBTxnManager::send_remote_request() {
 #if USE_RDMA == CHANGE_MSG_QUEUE
 	tport_man.rdma_thd_send_msg(get_thd_id(), dest_node_id, Message::create_message(this,RQRY));
 #else
-    DEBUG_T("ycsb send remote request %ld, %ld\n",txn->txn_id,txn->batch_id);
+    DEBUG_T("ycsb send remote request %ld, %ld to %ld\n",txn->txn_id,txn->batch_id, dest_node_id);
 	txn_stats.two_sided_start_time = get_sys_clock();
     msg_queue.enqueue(get_thd_id(),Message::create_message(this,RQRY),dest_node_id);
 #endif
@@ -320,7 +320,8 @@ RC YCSBTxnManager::run_txn_state(yield_func_t &yield, uint64_t cor_id) {
 			if(loc) {
 				// printf("%ld:%ld:%ld:%ld in run txn loc %ld:%ld\n",cor_id,get_txn_id(), req->key, next_record_id, GET_NODE_ID(part_id), g_node_id);
 				rc = run_ycsb_0(yield,req,row,cor_id);
-			} else if (rdma_one_side()) {
+			// } else if (rdma_one_side()) {
+			} else if (rdma_rw_one_sided()) {
 			// } else if (rdma_one_side() || rdma_rw_one_sided()) {
 				// printf("%ld:%ld:%ld:%ld in run txn remote %ld:%ld\n",cor_id,get_txn_id(), req->key, next_record_id, GET_NODE_ID(part_id), g_node_id);
 				rc = send_remote_one_side_request(yield, req, row, cor_id);

@@ -97,6 +97,10 @@
         "__tree": "cpp",
         "__tuple": "cpp",
         "__functional_03": "cpp",
-        "ciso646": "cpp"
+        "ciso646": "cpp",
+        "semaphore": "cpp",
+        "hash_map": "cpp",
+        "hash_set": "cpp",
+        "numbers": "cpp"
     }
 }

@@ -381,7 +381,6 @@ RC row_t::remote_copy_row(row_t* remote_row, TxnManager * txn, Access *access) {
   memcpy((char*)txn->cur_row, (char*)remote_row, row_t::get_row_size(remote_row->tuple_size));
   access->data = txn->cur_row;
 //   printf("remote_copy_row.cpp:286】table_name = %s operate_size = %ld tuple_size = %ld sizeof(row_t)=%d\n",txn->cur_row->table_name,row_t::get_row_size(remote_row->tuple_size),txn->cur_row->tuple_size,sizeof(row_t));
-  //access->orig_row = txn->cur_row;
 
   INC_STATS(txn->get_thd_id(), trans_cur_row_copy_time, get_sys_clock() - copy_time);
   return rc;
@@ -428,6 +427,7 @@ RC row_t::get_row(yield_func_t &yield,access_t type, TxnManager *txn, Access *ac
 	rc = this->manager->access(type,txn);
 
 	uint64_t copy_time = get_sys_clock();
+	memcpy((char*)txn->cur_row, this, row_t::get_row_size(tuple_size));
 	txn->cur_row->copy(this);
 	access->data = txn->cur_row;
 	//assert(rc == RCOK);
@@ -464,9 +464,15 @@ RC row_t::get_row(yield_func_t &yield,access_t type, TxnManager *txn, Access *ac
 
   rc = this->manager->access(yield, type, txn, txn->cur_row, cor_id);
 
-  uint64_t copy_time = get_sys_clock();
-  txn->cur_row->copy(this);
-  access->data = txn->cur_row;
+//   uint64_t copy_time = get_sys_clock();
+//   txn->cur_row->copy(this);
+//   txn->cur_row->manager = this->manager;
+//   access->data = txn->cur_row;
+
+	memcpy((char*)txn->cur_row, this, row_t::get_row_size(tuple_size));
+	uint64_t copy_time = get_sys_clock();
+	access->data = txn->cur_row;
+	assert(txn->cur_row->manager != nullptr);
 	//assert(rc == RCOK);
   INC_STATS(txn->get_thd_id(), trans_cur_row_copy_time, get_sys_clock() - copy_time);
 	goto end;
@@ -639,13 +645,14 @@ RC row_t::get_row(yield_func_t &yield,access_t type, TxnManager *txn, Access *ac
 	uint64_t copy_time = get_sys_clock();
 
 	rc = this->manager->access(yield, txn, access, type, cor_id);
-	if (rc == RCOK) {
+	memcpy((char*)txn->cur_row, this, row_t::get_row_size(tuple_size));
+	// if (rc == RCOK) {
 		access->data = txn->cur_row;
 		assert(access->data->get_data() != NULL);
 		assert(access->data->get_table() != NULL);
 		assert(access->data->get_schema() == this->get_schema());
 		assert(access->data->get_table_name() != NULL);
-	}
+	// }
 	goto end;
 #elif CC_ALG == OCC || CC_ALG == FOCC || CC_ALG == BOCC
 	// OCC always make a local copy regardless of read or write
@@ -709,7 +716,7 @@ RC row_t::get_row(yield_func_t &yield,access_t type, TxnManager *txn, Access *ac
     INC_STATS(txn->get_thd_id(), trans_cur_row_init_time, get_sys_clock() - init_time);
 
 	rc = this->manager->access(txn, ts_type, txn->cur_row);
-
+	memcpy((char*)txn->cur_row, this, row_t::get_row_size(tuple_size));
   	uint64_t copy_time = get_sys_clock();
   	access->data = txn->cur_row;
   	INC_STATS(txn->get_thd_id(), trans_cur_row_copy_time, get_sys_clock() - copy_time);

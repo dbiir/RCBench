@@ -22,7 +22,7 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 		if(ts < temp_row->wts){
 			rc = Abort;
 			// #if DEBUG_PRINTF
-			// printf("[read wts failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
+			DEBUG_C("TS1 [read wts failed] txn:%ld, ts:%ld key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),ts,_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
 			// #endif
 			mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			return rc;
@@ -36,7 +36,7 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 			if(cas_result!=old_rts){ //cas fail, atomicity violated
 				rc = Abort;
 				// #if DEBUG_PRINTF
-				// printf("[change rts failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
+				DEBUG_C("TS1 [change rts failed]txn:%ld, ts:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),ts,_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
 				// #endif
 				mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 				return rc;
@@ -52,6 +52,7 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 			}
 			if(second_row->wts!=temp_row->wts || diff){ //atomicity violated
 				rc = Abort;
+				DEBUG_C("TS1 [change rts atomicity failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu, second wts:%lu, diff:%ld\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts,second_row->wts, diff);
 				mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 				mem_allocator.free(second_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 				return rc;					
@@ -66,9 +67,9 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 	}
 	else if(type == WR) {
 		if (ts < temp_row->rts){
-			#if DEBUG_PRINTF
-			printf("[write rts failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
-			#endif
+			// #if DEBUG_PRINTF
+			DEBUG_C("TS1 [write rts failed]txn:%ld, current ts %ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),ts,_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
+			// #endif
 			rc = Abort;
 			mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			return rc;
@@ -85,9 +86,9 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 		uint64_t mutx_offset = access->offset;
 		uint64_t cas_result = txn->cas_remote_content(access->location,mutx_offset,old_mutx,new_mutx);
 		if(cas_result!=old_mutx){ //cas fail, atomicity violated
-			#if DEBUG_PRINTF
-			printf("[lock failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
-			#endif
+			// #if DEBUG_PRINTF
+			DEBUG_C("TS1 [lock failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
+			// #endif
 			rc = Abort;
 			mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			return rc;
@@ -99,6 +100,7 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 		if(ts < temp_row->rts){//atomicity violated
 			rc = Abort;
 			_row->mutx = 0;
+			DEBUG_C("TS1 [change rts atomicity failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
 			mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			mem_allocator.free(second_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			return rc;					

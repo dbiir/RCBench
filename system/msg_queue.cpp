@@ -96,8 +96,11 @@ void MessageQueue::enqueue(uint64_t thd_id, Message * msg,uint64_t dest) {
     return;
   }
 #endif
-  while (!m_queue[rand]->push(entry) && !simulation->is_done()) {
+  bool success = false;
+  while (!success && !simulation->is_done()) {
+    success=m_queue[rand]->push(entry);
   }
+  // DEBUG_T("MQ Enqueue msg queue %ld type %ld, txnid %ld to %ld\n",rand,msg->get_rtype(),msg->get_txn_id(),dest);
   INC_STATS(thd_id,mtx[3],get_sys_clock() - mtx_time_start);
   INC_STATS(thd_id,msg_queue_enq_cnt,1);
   sem_wait(&_semaphore);
@@ -124,20 +127,8 @@ uint64_t MessageQueue::dequeue(uint64_t thd_id, Message *& msg) {
 #elif WORKLOAD == DA
   valid = m_queue[0]->pop(entry);
 #else
-  //uint64_t ctr_id = thd_id % g_this_send_thread_cnt;
-  //uint64_t start_ctr = *ctr[ctr_id];
   valid = m_queue[thd_id%g_this_send_thread_cnt]->pop(entry);
 #endif
-  /*
-  while(!valid && !simulation->is_done()) {
-    ++(*ctr[ctr_id]);
-    if(*ctr[ctr_id] >= g_this_thread_cnt)
-      *ctr[ctr_id] = 0;
-    valid = m_queue[*ctr[ctr_id]]->pop(entry);
-    if(*ctr[ctr_id] == start_ctr)
-      break;
-  }
-  */
   INC_STATS(thd_id,mtx[4],get_sys_clock() - mtx_time_start);
   uint64_t curr_time = get_sys_clock();
   if(valid) {
@@ -161,7 +152,8 @@ uint64_t MessageQueue::dequeue(uint64_t thd_id, Message *& msg) {
     dest = entry->dest;
     assert(dest < g_total_node_cnt);
     msg = entry->msg;
-    DEBUG("MQ Dequeue %ld\n",dest)
+    DEBUG("MQ Dequeue %ld\n",dest);
+    // DEBUG_T("MQ Dequeue msg type %ld, txnid %ld to %ld\n",msg->get_rtype(),msg->get_txn_id(),dest);
     statqueue(thd_id, entry);
     INC_STATS(thd_id,msg_queue_delay_time,curr_time - entry->starttime);
     INC_STATS(thd_id,msg_queue_cnt,1);
