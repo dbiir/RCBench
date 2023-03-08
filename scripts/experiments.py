@@ -217,9 +217,9 @@ def ycsb_hg():
     # algos=['RDMA_WAIT_DIE2']
     # algos=['RDMA_WOUND_WAIT2']
     # algos=['RDMA_MVCC']
-    # algos=['RDMA_TS1']
+    algos=['RDMA_CICADA']
     # algos=['RDMA_SILO']
-    algos=['RDMA_MAAT_H']
+    # algos=['RDMA_MAAT_H']
     base_table_size=1048576*4
     txn_write_perc = [1]
     tup_write_perc = [0.2]
@@ -230,9 +230,9 @@ def ycsb_hg():
     scnt = [1]
     rcnt = [1]
     skew = [0.2]
-    hgid = [5]
-    # hgid = [1,2,3,4,5,6]
-    # hgid = [4,5] #for 2pl and mvcc
+    # hgid = [6]
+    hgid = [1]
+    # hgid = [4,5] #for 2pl
     sit = 6
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","SYNTH_TABLE_SIZE","HG_ID","RDMA_SIT",
     "REQ_PER_QUERY","TUP_WRITE_PERC","TXN_WRITE_PERC","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT","CLIENT_THREAD_CNT","SEND_THREAD_CNT","REM_THREAD_CNT","CLIENT_SEND_THREAD_CNT","CLIENT_REM_THREAD_CNT"]

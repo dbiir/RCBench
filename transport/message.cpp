@@ -408,7 +408,8 @@ void Message::release_message(Message * msg) {
 
 uint64_t QueryMessage::get_size() {
   uint64_t size = Message::mget_size();
-#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == CICADA || CC_ALG == WOUND_WAIT || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC || CC_ALG == RDMA_TS1|| CC_ALG == RDMA_MVCC
+
+#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == CICADA || CC_ALG == RDMA_CICADA || CC_ALG == WOUND_WAIT || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC || CC_ALG == RDMA_TS1 || CC_ALG == RDMA_MVCC
   size += sizeof(ts);
 #endif
 #if CC_ALG == OCC || CC_ALG == FOCC || CC_ALG == BOCC || CC_ALG == SSI || CC_ALG == WSI || \
@@ -425,7 +426,7 @@ uint64_t QueryMessage::get_size() {
 
 void QueryMessage::copy_from_txn(TxnManager * txn) {
   Message::mcopy_from_txn(txn);
-#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == CICADA || CC_ALG == WOUND_WAIT || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC || CC_ALG == RDMA_TS1|| CC_ALG == RDMA_MVCC
+#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == CICADA || CC_ALG == RDMA_CICADA || CC_ALG == WOUND_WAIT || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC || CC_ALG == RDMA_TS1 || CC_ALG == RDMA_MVCC
   ts = txn->get_timestamp();
   assert(ts != 0);
 #endif
@@ -442,7 +443,7 @@ void QueryMessage::copy_from_txn(TxnManager * txn) {
 
 void QueryMessage::copy_to_txn(TxnManager * txn) {
   Message::mcopy_to_txn(txn);
-#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == CICADA || CC_ALG == WOUND_WAIT || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC || CC_ALG == RDMA_TS1 || CC_ALG == RDMA_MVCC
+#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == CICADA || CC_ALG == RDMA_CICADA || CC_ALG == WOUND_WAIT || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC || CC_ALG == RDMA_TS1 || CC_ALG == RDMA_MVCC
   assert(ts != 0);
   txn->set_timestamp(ts);
 #endif
@@ -462,7 +463,7 @@ void QueryMessage::copy_from_buf(char * buf) {
   Message::mcopy_from_buf(buf);
   uint64_t ptr __attribute__ ((unused));
   ptr = Message::mget_size();
-#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == WOUND_WAIT || CC_ALG == CICADA || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC || CC_ALG == RDMA_TS1|| CC_ALG == RDMA_MVCC
+#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == WOUND_WAIT || CC_ALG == CICADA || CC_ALG == RDMA_CICADA || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC || CC_ALG == RDMA_TS1 || CC_ALG == RDMA_MVCC
  COPY_VAL(ts,buf,ptr);
   assert(ts != 0);
 #endif
@@ -481,7 +482,7 @@ void QueryMessage::copy_to_buf(char * buf) {
   Message::mcopy_to_buf(buf);
   uint64_t ptr __attribute__ ((unused));
   ptr = Message::mget_size();
-#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == WOUND_WAIT || CC_ALG == CICADA || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC || CC_ALG == RDMA_TS1|| CC_ALG == RDMA_MVCC
+#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == WOUND_WAIT || CC_ALG == CICADA || CC_ALG == RDMA_CICADA || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC || CC_ALG == RDMA_TS1 || CC_ALG == RDMA_MVCC
  COPY_BUF(buf,ts,ptr);
   assert(ts != 0);
 #endif
@@ -1144,7 +1145,7 @@ void ForwardMessage::copy_to_buf(char * buf) {
 
 /************************/
 void PrepareMessage::release() {
-  #if !RDMA_ONE_SIDED_CO
+  #if RDMA_ONE_SIDED_RW && !RDMA_ONE_SIDED_VA
   for(uint64_t i = 0; i < accesses.size(); i++) {
     if (!accesses[i]) continue;
     if (accesses[i]->data) mem_allocator.free(accesses[i]->data,row_t::get_row_size(0));
@@ -1169,13 +1170,21 @@ uint64_t PrepareMessage::get_size() {
   size += sizeof(uint64_t) * uncommitted_writes_y.size();
   size += sizeof(uint64_t) * 2;
 #endif
-#if !RDMA_ONE_SIDED_CO
-  size += sizeof(uint64_t);
+#if CC_ALG == RDMA_CICADA 
+  size += sizeof(ts);
+#endif
+#if RDMA_ONE_SIDED_RW && !RDMA_ONE_SIDED_VA
+  size += sizeof(size_t);
   // uint64_t asize = accesses.size() < 2 ? accesses.size():2;
   size_t asize = 0;
+  #if CC_ALG != RDMA_CICADA
   for(uint64_t i = 0; i < accesses.size(); i++) {
     if (accesses[i]->location == dest_node) asize++;
   }
+  #else
+  asize = accesses.size();
+  #endif
+
   // uint64_t asize = accesses.size();
   size += Access::get_size() * asize;
 #endif
@@ -1203,7 +1212,10 @@ void PrepareMessage::copy_from_txn(TxnManager * txn) {
   greatest_write_timestamp = txn->greatest_write_timestamp;
   greatest_read_timestamp = txn->greatest_read_timestamp;
 #endif
-#if !RDMA_ONE_SIDED_CO
+#if CC_ALG == RDMA_CICADA 
+  ts = txn->get_timestamp();
+#endif
+#if RDMA_ONE_SIDED_RW && !RDMA_ONE_SIDED_VA
   accesses.clear();
   accesses.init(txn->txn->accesses.size());
   // accesses.copy(txn->txn->accesses);
@@ -1235,11 +1247,18 @@ void PrepareMessage::copy_to_txn(TxnManager * txn) {
   txn->greatest_read_timestamp = txn->greatest_read_timestamp > greatest_read_timestamp ?
                                   txn->greatest_read_timestamp : greatest_read_timestamp;
 #endif
-#if !RDMA_ONE_SIDED_CO
+#if CC_ALG == RDMA_CICADA 
+  txn->set_timestamp(ts);
+#endif
+#if RDMA_ONE_SIDED_RW && !RDMA_ONE_SIDED_VA
   for (int i = 0; i < accesses.size(); i++) {
     accesses[i]->to_two_sided_local();
     DEBUG_M("Txn %ld add access key %ld location %ld offset %ld orig_row %p\n", txn->txn->txn_id, accesses[i]->key,accesses[i]->location,accesses[i]->offset,accesses[i]->orig_row);
     if (accesses[i]->type == WR) txn->txn->write_cnt ++;
+
+    #if CC_ALG == RDMA_CICADA
+    txn->version_num.push_back(accesses[i]->version);
+    #endif
   }
   txn->txn->accesses.append(accesses);
   txn->txn->row_cnt += accesses.get_count();
@@ -1283,7 +1302,11 @@ void PrepareMessage::copy_from_buf(char * buf) {
   COPY_VAL(greatest_write_timestamp,buf,ptr);
   COPY_VAL(greatest_read_timestamp,buf,ptr);
 #endif
-#if !RDMA_ONE_SIDED_CO
+#if CC_ALG == RDMA_CICADA 
+  COPY_VAL(ts,buf,ptr);
+  assert(ts != 0);
+#endif
+#if RDMA_ONE_SIDED_RW && !RDMA_ONE_SIDED_VA
   size_t asize = 0;
   COPY_VAL(asize,buf,ptr);
   accesses.init(asize);
@@ -1327,20 +1350,33 @@ void PrepareMessage::copy_to_buf(char * buf) {
   COPY_BUF(buf,greatest_write_timestamp,ptr);
   COPY_BUF(buf,greatest_read_timestamp,ptr);
 #endif
-#if !RDMA_ONE_SIDED_CO
+#if CC_ALG == RDMA_CICADA 
+  COPY_BUF(buf,ts,ptr);
+  assert(ts != 0);
+#endif
+#if RDMA_ONE_SIDED_RW && !RDMA_ONE_SIDED_VA
   // size_t asize = accesses.size();
   size_t asize = 0;
+  #if CC_ALG != RDMA_CICADA
   for(uint64_t i = 0; i < accesses.size(); i++) {
     if (accesses[i]->location == dest_node) asize++;
   }
+  #else
+  asize = accesses.size();
+  #endif
   // asize = asize < 2 ? asize : 2;
   COPY_BUF(buf,asize,ptr);
   for(uint64_t i = 0; i < accesses.size(); i++) {
+    assert(accesses[i]->key != 0);
+    assert(accesses[i]->data != 0);
+    assert(accesses[i]->data->manager != 0);
+    #if CC_ALG != RDMA_CICADA
     if (accesses[i]->location == dest_node) {
-      assert(accesses[i]->key != 0);
-      assert(accesses[i]->data != 0);
       accesses[i]->copy_to_buf(buf,ptr);
     }
+    #else
+    accesses[i]->copy_to_buf(buf,ptr);
+    #endif
   }
 #endif
   assert(ptr == get_size());
@@ -1358,6 +1394,11 @@ uint64_t AckMessage::get_size() {
 #endif
 #if CC_ALG == SILO || CC_ALG == RDMA_SILO
   size += sizeof(uint64_t);
+#endif
+#if CC_ALG == RDMA_CICADA && !RDMA_ONE_SIDED_VA && RDMA_ONE_SIDED_CO
+  assert(set_first.size() == set_second.size());
+  size += sizeof(size_t);
+  size += sizeof(uint64_t) * 2 * set_first.size();
 #endif
 #if WORKLOAD == PPS && CC_ALG == CALVIN
   size += sizeof(size_t);
@@ -1390,6 +1431,14 @@ void AckMessage::copy_from_txn(TxnManager * txn) {
   upper = dta_time_table.get_upper(txn->get_thd_id(), txn->get_txn_id());
 #endif
 
+#if CC_ALG == RDMA_CICADA && !RDMA_ONE_SIDED_VA && RDMA_ONE_SIDED_CO
+  set_first.init(txn->uncommitted_set.size());
+  set_second.init(txn->uncommitted_set.size());
+  for (unordered_map<uint64_t, uint64_t>::iterator i=txn->uncommitted_set.begin(); i!=txn->uncommitted_set.end(); i++) {
+    set_first.add(i->first);
+    set_second.add(i->second);
+  }
+#endif
 #if WORKLOAD == PPS && CC_ALG == CALVIN
   PPSQuery* pps_query = (PPSQuery*)(txn->query);
   part_keys.copy(pps_query->part_keys);
@@ -1399,6 +1448,12 @@ void AckMessage::copy_from_txn(TxnManager * txn) {
 void AckMessage::copy_to_txn(TxnManager * txn) {
   Message::mcopy_to_txn(txn);
   //query->rc = rc;
+#if CC_ALG == RDMA_CICADA && !RDMA_ONE_SIDED_VA && RDMA_ONE_SIDED_CO
+  assert(set_first.size() == set_second.size());
+  for (int i = 0; i < set_first.size(); i++) {
+    txn->uncommitted_set.insert(std::make_pair(set_first[i], set_second[i]));
+  }
+#endif
 #if WORKLOAD == PPS && CC_ALG == CALVIN
 
   PPSQuery* pps_query = (PPSQuery*)(txn->query);
@@ -1416,6 +1471,19 @@ void AckMessage::copy_from_buf(char * buf) {
 #endif
 #if CC_ALG == SILO || CC_ALG == RDMA_SILO
   COPY_VAL(max_tid,buf,ptr);
+#endif
+#if CC_ALG == RDMA_CICADA && !RDMA_ONE_SIDED_VA && RDMA_ONE_SIDED_CO
+  size_t size;
+  COPY_VAL(size,buf,ptr);
+  set_first.init(size);
+  set_second.init(size);
+  for(uint64_t i = 0 ; i < size;i++) {
+    uint64_t item;
+    COPY_VAL(item,buf,ptr);
+    set_first.add(item);
+    COPY_VAL(item,buf,ptr);
+    set_second.add(item);
+  }
 #endif
 #if WORKLOAD == PPS && CC_ALG == CALVIN
 
@@ -1442,6 +1510,17 @@ void AckMessage::copy_to_buf(char * buf) {
 #if CC_ALG == SILO|| CC_ALG == RDMA_SILO
   COPY_BUF(buf,max_tid,ptr);
 #endif
+#if CC_ALG == RDMA_CICADA && !RDMA_ONE_SIDED_VA && RDMA_ONE_SIDED_CO
+  assert(set_first.size() == set_second.size());
+  size_t size = set_first.size();
+  COPY_BUF(buf,size,ptr);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t item = set_first[i];
+    COPY_BUF(buf,item,ptr);
+    item = set_second[i];
+    COPY_BUF(buf,item,ptr);
+  }
+#endif
 #if WORKLOAD == PPS && CC_ALG == CALVIN
 
   size_t size = part_keys.size();
@@ -1456,7 +1535,7 @@ void AckMessage::copy_to_buf(char * buf) {
 /************************/
 
 void QueryResponseMessage::release() {
-  #if RDMA_ONE_SIDED_CO
+  #if !RDMA_ONE_SIDED_RW && (RDMA_ONE_SIDED_VA || RDMA_ONE_SIDED_CO)
   for(uint64_t i = 0; i < accesses.size(); i++) {
     if (!accesses[i]) continue;
     if (accesses[i]->data) mem_allocator.free(accesses[i]->data,row_t::get_row_size(0));
@@ -1481,7 +1560,7 @@ uint64_t QueryResponseMessage::get_size() {
   size += sizeof(uint64_t) * uncommitted_writes_y.size();
   size += sizeof(uint64_t) * 2;
 #endif
-#if RDMA_ONE_SIDED_CO
+#if !RDMA_ONE_SIDED_RW && (RDMA_ONE_SIDED_VA || RDMA_ONE_SIDED_CO)
   size += sizeof(uint64_t);
   size += Access::get_size() * accesses.size();
 #endif
@@ -1511,23 +1590,23 @@ void QueryResponseMessage::copy_from_txn(TxnManager * txn) {
   greatest_write_timestamp = txn->greatest_write_timestamp;
   greatest_read_timestamp = txn->greatest_read_timestamp;
 #endif
-#if RDMA_ONE_SIDED_CO
+#if !RDMA_ONE_SIDED_RW && (RDMA_ONE_SIDED_VA || RDMA_ONE_SIDED_CO)
   accesses.clear();
-  accesses.init(txn->txn->accesses.size());
-  // accesses.copy(txn->txn->accesses);
-  for (int i = 0; i < txn->txn->accesses.size(); i++) {
-    assert(txn->txn->accesses[i]->key != 0);
-    assert(txn->txn->accesses[i]->data != 0);
-    Access * access = NULL;
-	  access_pool.get(0,access);
-    access->copy(txn->txn->accesses[i]);
-    accesses.add(access);
+  if (rc != Abort) {
+    accesses.init(txn->txn->accesses.size());
+    // accesses.copy(txn->txn->accesses);
+    for (int i = 0; i < txn->txn->accesses.size(); i++) {
+      assert(txn->txn->accesses[i]->key != 0);
+      assert(txn->txn->accesses[i]->data != 0);
+      Access * access = NULL;
+      access_pool.get(0,access);
+      assert(txn->txn->accesses[i]->data != 0 && txn->txn->accesses[i]->data->manager != 0);
+      access->copy(txn->txn->accesses[i]);
+      accesses.add(access);
+    }
+    dest_node = UINT64_MAX; // init to max;
+    DEBUG_T("txn %ld transfer %d accesses\n", txn->txn->txn_id,accesses.size());
   }
-  dest_node = UINT64_MAX; // init to max;
-  DEBUG_T("txn %ld transfer %d accesses\n", txn->txn->txn_id,accesses.size());
-  // for (int i = 0; i < accesses.size(); i++) {
-  //   accesses[i]->to_one_sided_remote();
-  // }
 #endif
 }
 
@@ -1549,18 +1628,23 @@ void QueryResponseMessage::copy_to_txn(TxnManager * txn) {
   txn->greatest_read_timestamp = txn->greatest_read_timestamp > greatest_read_timestamp ?
                                   txn->greatest_read_timestamp : greatest_read_timestamp;
 #endif
-#if RDMA_ONE_SIDED_CO
-  for (int i = 0; i < accesses.size();i++) {
-    bool insert = true;
-    for (int j = 0; j < txn->txn->accesses.size(); j++) {
-      if (txn->txn->accesses[j]->key == accesses[i]->key) insert = false;
-    }
-    if (insert) {
-      DEBUG_C("txn %ld rqry_rsp msg get %ld access key %ld\n",txn->get_txn_id(),i,accesses[i]->key);
-      txn->txn->accesses.add_unique(accesses[i]);
-      txn->txn->row_cnt ++;
-      if (accesses[i]->type == WR) txn->txn->write_cnt ++;
-      accesses.set(i,nullptr);
+#if !RDMA_ONE_SIDED_RW && (RDMA_ONE_SIDED_VA || RDMA_ONE_SIDED_CO)
+  if (rc != Abort) {
+    for (int i = 0; i < accesses.size();i++) {
+      bool insert = true;
+      for (int j = 0; j < txn->txn->accesses.size(); j++) {
+        if (txn->txn->accesses[j]->key == accesses[i]->key) insert = false;
+      }
+      if (insert) {
+        DEBUG_C("txn %ld rqry_rsp msg get %ld access key %ld\n",txn->get_txn_id(),i,accesses[i]->key);
+        txn->txn->accesses.add_unique(accesses[i]);
+        #if CC_ALG == RDMA_CICADA
+        txn->version_num.push_back(accesses[i]->version);
+        #endif
+        txn->txn->row_cnt ++;
+        if (accesses[i]->type == WR) txn->txn->write_cnt ++;
+        accesses.set(i,nullptr);
+      }
     }
   }
 #endif
@@ -1602,7 +1686,7 @@ void QueryResponseMessage::copy_from_buf(char * buf) {
   COPY_VAL(greatest_write_timestamp,buf,ptr);
   COPY_VAL(greatest_read_timestamp,buf,ptr);
 #endif
-#if RDMA_ONE_SIDED_CO
+#if !RDMA_ONE_SIDED_RW && (RDMA_ONE_SIDED_VA || RDMA_ONE_SIDED_CO)
   size_t asize = 0;
   COPY_VAL(asize,buf,ptr);
   accesses.init(asize);
@@ -1646,7 +1730,7 @@ void QueryResponseMessage::copy_to_buf(char * buf) {
   COPY_BUF(buf,greatest_write_timestamp,ptr);
   COPY_BUF(buf,greatest_read_timestamp,ptr);
 #endif
-#if RDMA_ONE_SIDED_CO
+#if !RDMA_ONE_SIDED_RW && (RDMA_ONE_SIDED_VA || RDMA_ONE_SIDED_CO)
   size_t asize = accesses.size();
   COPY_BUF(buf,asize,ptr);
   for(uint64_t i = 0; i < asize; i++) {
@@ -1663,12 +1747,17 @@ void QueryResponseMessage::copy_to_buf(char * buf) {
 
 void FinishMessage::release() {
   #if !RDMA_ONE_SIDED_CO && RDMA_ONE_SIDED_RW// && RDMA_ONE_SIDED_VA
-  for(uint64_t i = 0; i < accesses.size(); i++) {
-    if (!accesses[i]) continue;
-    if (accesses[i]->data) mem_allocator.free(accesses[i]->data,row_t::get_row_size(0));
-    access_pool.put(0,accesses[i]);
-  }
-  accesses.release();
+  #if CC_ALG == RDMA_CICADA
+    set_first.clear();
+    set_second.clear();
+  #else
+    for(uint64_t i = 0; i < accesses.size(); i++) {
+      if (!accesses[i]) continue;
+      if (accesses[i]->data) mem_allocator.free(accesses[i]->data,row_t::get_row_size(0));
+      access_pool.put(0,accesses[i]);
+    }
+    accesses.release();
+  #endif
   #endif
 }
 
@@ -1684,12 +1773,17 @@ uint64_t FinishMessage::get_size() {
 #endif
 #if !RDMA_ONE_SIDED_CO && RDMA_ONE_SIDED_RW// && RDMA_ONE_SIDED_VA
   size += sizeof(uint64_t);
-  size_t asize = 0;
-  for(uint64_t i = 0; i < accesses.size(); i++) {
-    if (accesses[i]->location == dest_node) asize++;
-  }
-  size += Access::get_size() * asize;
-
+  #if CC_ALG == RDMA_CICADA
+    assert(set_first.size() == set_second.size());
+    size += sizeof(size_t);
+    size += sizeof(uint64_t) * 2 * set_first.size();
+  #else
+    size_t asize = 0;
+    for(uint64_t i = 0; i < accesses.size(); i++) {
+      if (accesses[i]->location == dest_node) asize++;
+    }
+    size += Access::get_size() * asize;
+  #endif
 #endif
   return size;
 }
@@ -1704,10 +1798,19 @@ void FinishMessage::copy_from_txn(TxnManager * txn) {
     CC_ALG == DLI_MVCC || CC_ALG == SILO || CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H || CC_ALG == RDMA_SILO
   commit_timestamp = txn->get_commit_timestamp();
 #endif
+
 #if CC_ALG == RDMA_TS1|| CC_ALG == RDMA_MVCC
   commit_timestamp = txn->get_timestamp();
 #endif
 #if !RDMA_ONE_SIDED_CO && RDMA_ONE_SIDED_RW// && RDMA_ONE_SIDED_VA
+#if CC_ALG == RDMA_CICADA
+  set_first.init(txn->uncommitted_set.size());
+  set_second.init(txn->uncommitted_set.size());
+  for (unordered_map<uint64_t, uint64_t>::iterator i=txn->uncommitted_set.begin(); i!=txn->uncommitted_set.end(); i++) {
+    set_first.add(i->first);
+    set_second.add(i->second);
+  }
+#else 
   accesses.clear();
   accesses.init(txn->txn->accesses.size());
   // accesses.copy(txn->txn->accesses);
@@ -1722,6 +1825,8 @@ void FinishMessage::copy_from_txn(TxnManager * txn) {
   }
   dest_node = UINT64_MAX; // init to max;
 #endif
+
+#endif
 }
 
 void FinishMessage::copy_to_txn(TxnManager * txn) {
@@ -1732,11 +1837,17 @@ void FinishMessage::copy_to_txn(TxnManager * txn) {
     CC_ALG == DLI_MVCC || CC_ALG == SILO || CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H || CC_ALG == RDMA_SILO
   txn->commit_timestamp = commit_timestamp;
 #endif
+
 #if CC_ALG == RDMA_TS1|| CC_ALG == RDMA_MVCC
   txn->set_timestamp(commit_timestamp);
 #endif
 #if !RDMA_ONE_SIDED_CO && RDMA_ONE_SIDED_RW
 // #if !RDMA_ONE_SIDED_CO && RDMA_ONE_SIDED_RW && RDMA_ONE_SIDED_VA
+#if CC_ALG == RDMA_CICADA
+  assert(set_first.size() == set_second.size());
+  for (int i = 0; i < set_first.size(); i++) {
+    txn->uncommitted_set.insert(std::make_pair(set_first[i], set_second[i]));
+#else 
   for (int i = 0; i < accesses.size();i++) {
     accesses[i]->to_two_sided_local();
     bool insert = true;
@@ -1750,6 +1861,8 @@ void FinishMessage::copy_to_txn(TxnManager * txn) {
       if (accesses[i]->type == WR) txn->txn->write_cnt ++;
       accesses.set(i,nullptr);
     }
+#endif
+
   }
 #endif
 }
@@ -1766,6 +1879,19 @@ void FinishMessage::copy_from_buf(char * buf) {
   COPY_VAL(commit_timestamp,buf,ptr);
 #endif
 #if !RDMA_ONE_SIDED_CO && RDMA_ONE_SIDED_RW// && RDMA_ONE_SIDED_VA
+#if CC_ALG == RDMA_CICADA
+  size_t size;
+  COPY_VAL(size,buf,ptr);
+  set_first.init(size);
+  set_second.init(size);
+  for(uint64_t i = 0 ; i < size;i++) {
+    uint64_t item;
+    COPY_VAL(item,buf,ptr);
+    set_first.add(item);
+    COPY_VAL(item,buf,ptr);
+    set_second.add(item);
+  }
+#else
   size_t asize = 0;
   COPY_VAL(asize,buf,ptr);
   accesses.init(asize);
@@ -1775,6 +1901,8 @@ void FinishMessage::copy_from_buf(char * buf) {
     access->copy_from_buf(buf,ptr);
     accesses.add(access);
   }
+#endif
+
 #endif
   uint64_t size = get_size();
   assert(ptr == get_size());
@@ -1793,6 +1921,17 @@ void FinishMessage::copy_to_buf(char * buf) {
 #endif
 #if !RDMA_ONE_SIDED_CO && RDMA_ONE_SIDED_RW// && RDMA_ONE_SIDED_VA
   // size_t asize = accesses.size();
+#if CC_ALG == RDMA_CICADA
+  assert(set_first.size() == set_second.size());
+  size_t size = set_first.size();
+  COPY_BUF(buf,size,ptr);
+  for(uint64_t i = 0; i < size; i++) {
+    uint64_t item = set_first[i];
+    COPY_BUF(buf,item,ptr);
+    item = set_second[i];
+    COPY_BUF(buf,item,ptr);
+  }
+#else
   size_t asize = 0;
   for(uint64_t i = 0; i < accesses.size(); i++) {
     if (accesses[i]->location == dest_node) asize++;
@@ -1807,6 +1946,7 @@ void FinishMessage::copy_to_buf(char * buf) {
     }
   }
   // DEBUG_C("finish msg copy %ld access\n",asize);
+#endif
 #endif
   assert(ptr == get_size());
   assert(ptr <= g_msg_size && get_size() <= g_msg_size);

@@ -116,7 +116,12 @@ public:
   uint64_t commit_timestamp;
 #endif
 #if ! RDMA_ONE_SIDED_CO && RDMA_ONE_SIDED_RW
-  Array<Access*> accesses;
+  #if CC_ALG == RDMA_CICADA
+    Array<uint64_t> set_first;
+    Array<uint64_t> set_second;
+  #else 
+    Array<Access*> accesses;
+  #endif
 #endif
 };
 
@@ -181,7 +186,7 @@ public:
   uint64_t greatest_write_timestamp;
   uint64_t greatest_read_timestamp;
 #endif
-#if RDMA_ONE_SIDED_CO
+#if !RDMA_ONE_SIDED_RW && (RDMA_ONE_SIDED_VA || RDMA_ONE_SIDED_CO)
   Array<Access*> accesses;
 #endif
 };
@@ -203,6 +208,12 @@ public:
 #endif
 #if CC_ALG == SILO || CC_ALG == RDMA_SILO
   uint64_t max_tid;
+#endif
+
+  // for cicada uncommitted set
+#if !RDMA_ONE_SIDED_VA && RDMA_ONE_SIDED_CO
+  Array<uint64_t> set_first;
+  Array<uint64_t> set_second;
 #endif
 
   // For Calvin PPS: part keys from secondary lookup for sequencer response
@@ -232,7 +243,10 @@ public:
   uint64_t greatest_write_timestamp;
   uint64_t greatest_read_timestamp;
 #endif
-#if ! RDMA_ONE_SIDED_CO
+#if CC_ALG == RDMA_CICADA
+  uint64_t ts;
+#endif
+#if RDMA_ONE_SIDED_RW && !RDMA_ONE_SIDED_VA
   Array<Access*> accesses;
 #endif
 };
@@ -409,7 +423,8 @@ public:
 
   uint64_t pid;
   bool is_readonly;
-#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == DTA || CC_ALG == WOOKONG || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == CICADA || CC_ALG == WOUND_WAIT || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC || CC_ALG == RDMA_TS1|| CC_ALG == RDMA_MVCC
+
+#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == DTA || CC_ALG == WOOKONG || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == CICADA || CC_ALG == RDMA_CICADA || CC_ALG == WOUND_WAIT || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC || CC_ALG == RDMA_TS1 || CC_ALG == RDMA_MVCC
   uint64_t ts;
 #endif
 #if CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3

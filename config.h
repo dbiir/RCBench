@@ -219,7 +219,7 @@
 //RDMA_NO_WAIT2, RDMA_WAIT_DIE2:no matter read or write, mutex lock is used 
 #define ISOLATION_LEVEL SERIALIZABLE
 
-#define CC_ALG RDMA_MAAT_H
+#define CC_ALG RDMA_CICADA
 
 #define YCSB_ABORT_MODE false
 #define QUEUE_C  APACITY_NEW 1000000
@@ -379,7 +379,7 @@
 #if RDMA_SIDED_EXP
 #define PART_PER_TXN 2
 #define REQ_PER_QUERY 10
-#define CC_ALG RDMA_MAAT_H
+
 #else
 #define PART_PER_TXN 2
 #define REQ_PER_QUERY 10
@@ -593,7 +593,7 @@ enum PPSTxnType {
 #define RDMA_MAAT_H 47
 #define RDMA_NO_WAIT_H 48
 // hg
-#define HG_ID 5
+#define HG_ID 1
 #if HG_ID == 0
 #define RDMA_ONE_SIDED_RW false
 #define RDMA_ONE_SIDED_VA false

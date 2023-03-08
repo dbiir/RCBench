@@ -764,6 +764,9 @@ RC WorkerThread::process_rfin(yield_func_t &yield, Message * msg, uint64_t cor_i
 RC WorkerThread::process_rack_prep(yield_func_t &yield, Message * msg, uint64_t cor_id) {
   DEBUG_T("RPREP_ACK %ld from %ld, rc %d\n",msg->get_txn_id(),msg->get_return_id(),((AckMessage*)msg)->rc);
 
+  #if RDMA_ONE_SIDED_CO
+    msg->copy_to_txn(txn_man);
+  #endif
   RC rc = RCOK;
 
   int responses_left = txn_man->received_response(((AckMessage*)msg)->rc);

@@ -163,11 +163,11 @@ RC Row_rdma_cicada::access(yield_func_t &yield ,access_t type, TxnManager * txn,
 						find = true;
 						version = _row->cicada_version[i].key;
 					}
-					if(retry_time > CICADA_MAX_RETRY_TIME) {
-						rc = Abort;
-						// printf("l find row %ld version and failed:%d state:%d Wts:%lu: txnts:%lu\n", _row->get_primary_key(), cnt, _row->cicada_version[i].state, _row->cicada_version[i].Wts, txn->get_timestamp());
-						INC_STATS(txn->get_thd_id(), cicada_case5_cnt, 1);
-					}
+					// if(retry_time > CICADA_MAX_RETRY_TIME) {
+					// 	rc = Abort;
+					// 	printf("l find row %ld version and failed:%d state:%d Wts:%lu: txnts:%lu\n", _row->get_primary_key(), cnt, _row->cicada_version[i].state, _row->cicada_version[i].Wts, txn->get_timestamp());
+					// 	INC_STATS(txn->get_thd_id(), cicada_case5_cnt, 1);
+					// }
 				}
 			} else {
 				rc = RCOK;
@@ -175,6 +175,14 @@ RC Row_rdma_cicada::access(yield_func_t &yield ,access_t type, TxnManager * txn,
 				version = _row->cicada_version[i].key;
 			}
 			if (find || rc == Abort) break;
+		}
+		if (!find && rc == RCOK) {
+			rc = Abort;
+		}
+		if (find) {
+			DEBUG_C("Txn %ld read a vaild version, version: %ld, key: %lu.\n", txn->get_txn_id(), version, _row->get_primary_key());
+		} else {
+			DEBUG_C("Txn %ld can not read a valid version, key: %lu.\n", txn->get_txn_id(), _row->get_primary_key());
 		}
 	#endif
 	} else if(type == WR) {
@@ -239,6 +247,8 @@ RC Row_rdma_cicada::access(yield_func_t &yield ,access_t type, TxnManager * txn,
 				continue;
 			}
 			if(_row->cicada_version[i].Wts > txn->get_timestamp() || _row->cicada_version[i].Rts > txn->get_timestamp()) {
+				DEBUG_T("w large version:%d state:%d Rts:%lu: txnts:%lu\n", cnt, _row->cicada_version[i].state, _row->cicada_version[i].Rts, txn->get_timestamp());
+				DEBUG_T("w large version:%d state:%d Wts:%lu: txnts:%lu\n", cnt, _row->cicada_version[i].state, _row->cicada_version[i].Wts, txn->get_timestamp());
 				rc = Abort;
 				INC_STATS(txn->get_thd_id(), cicada_case6_cnt, 1);
 				break;
@@ -274,10 +284,10 @@ RC Row_rdma_cicada::access(yield_func_t &yield ,access_t type, TxnManager * txn,
 						find = true;
 						version = _row->cicada_version[i].key;
 					}
-					if(retry_time > 1) {
-						rc = Abort;
-						INC_STATS(txn->get_thd_id(), cicada_case6_cnt, 1);
-					}
+					// if(retry_time > 1) {
+					// 	rc = Abort;
+					// 	INC_STATS(txn->get_thd_id(), cicada_case6_cnt, 1);
+					// }
 				}
 			} else {
 				rc = RCOK;
@@ -286,9 +296,20 @@ RC Row_rdma_cicada::access(yield_func_t &yield ,access_t type, TxnManager * txn,
 			}
 			if (find || rc == Abort) break;
 		}
+		if (!find && rc == RCOK) {
+			rc = Abort;
+		}
+		if (find) {
+			DEBUG_C("Txn %ld write a vaild version, version: %ld, key: %lu.\n", txn->get_txn_id(), version, _row->get_primary_key());
+		} else {
+			DEBUG_C("Txn %ld can not write a valid version, key: %lu.\n", txn->get_txn_id(), _row->get_primary_key());
+		}
 	#endif
 	}
 	txn->version_num.push_back(version);
+	for (int i = 0; i < txn->version_num.size(); i++) {
+		DEBUG("TXN %ld, txn->version_num[%d]: %ld, rc: %d.\n",txn->get_txn_id(), i, txn->version_num[i], rc);
+	}
 	uint64_t timespan = get_sys_clock() - starttime;
 	txn->txn_stats.cc_time += timespan;
 	txn->txn_stats.cc_time_short += timespan;
