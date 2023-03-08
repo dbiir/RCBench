@@ -42,6 +42,7 @@ public:
   uint64_t txn_id;
   uint64_t batch_id;
   uint64_t return_node_id;
+  uint64_t dest_node;
 
   uint64_t wq_time;
   uint64_t mq_time;
@@ -65,6 +66,7 @@ public:
   uint64_t get_txn_id() {return txn_id;}
   uint64_t get_batch_id() {return batch_id;}
   uint64_t get_return_id() {return return_node_id;}
+  uint64_t set_dest_node(uint64_t dest_id) {dest_node = dest_id;}
   void mcopy_from_buf(char * buf);
   void mcopy_to_buf(char * buf);
   void mcopy_from_txn(TxnManager * txn);
@@ -100,7 +102,7 @@ public:
   void copy_to_txn(TxnManager * txn);
   uint64_t get_size();
   void init() {}
-  void release() {}
+  void release();
   bool is_abort() { return rc == Abort;}
 
   uint64_t pid;
@@ -110,8 +112,11 @@ public:
   bool readonly;
 #if CC_ALG == MAAT || CC_ALG == WOOKONG || CC_ALG == SSI || CC_ALG == WSI || \
     CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3 || CC_ALG == DLI_MVCC_OCC || \
-    CC_ALG == DLI_MVCC || CC_ALG == SILO || CC_ALG == RDMA_MAAT_H
+    CC_ALG == DLI_MVCC || CC_ALG == SILO || CC_ALG == RDMA_MAAT_H || CC_ALG == RDMA_SILO  || CC_ALG == RDMA_TS1|| CC_ALG == RDMA_MVCC
   uint64_t commit_timestamp;
+#endif
+#if ! RDMA_ONE_SIDED_CO && RDMA_ONE_SIDED_RW
+  Array<Access*> accesses;
 #endif
 };
 
@@ -162,7 +167,7 @@ public:
   void copy_to_txn(TxnManager * txn);
   uint64_t get_size();
   void init() {}
-  void release() {}
+  void release();
 
   RC rc;
   uint64_t pid;
@@ -175,6 +180,9 @@ public:
   Array<uint64_t> uncommitted_writes_y;
   uint64_t greatest_write_timestamp;
   uint64_t greatest_read_timestamp;
+#endif
+#if RDMA_ONE_SIDED_CO
+  Array<Access*> accesses;
 #endif
 };
 
@@ -193,7 +201,7 @@ public:
   uint64_t lower;
   uint64_t upper;
 #endif
-#if CC_ALG == SILO
+#if CC_ALG == SILO || CC_ALG == RDMA_SILO
   uint64_t max_tid;
 #endif
 
@@ -209,7 +217,7 @@ public:
   void copy_to_txn(TxnManager * txn);
   uint64_t get_size();
   void init() {}
-  void release() {}
+  void release();
 
   uint64_t pid;
   RC rc;
@@ -223,6 +231,9 @@ public:
   Array<uint64_t> uncommitted_writes_y;
   uint64_t greatest_write_timestamp;
   uint64_t greatest_read_timestamp;
+#endif
+#if ! RDMA_ONE_SIDED_CO
+  Array<Access*> accesses;
 #endif
 };
 
@@ -397,7 +408,8 @@ public:
   void release() {}
 
   uint64_t pid;
-#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == DTA || CC_ALG == WOOKONG || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == CICADA || CC_ALG == WOUND_WAIT || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC
+  bool is_readonly;
+#if CC_ALG == WAIT_DIE || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == TIMESTAMP || CC_ALG == MVCC || CC_ALG == DTA || CC_ALG == WOOKONG || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == CICADA || CC_ALG == WOUND_WAIT || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_MOCC || CC_ALG == RDMA_TS1|| CC_ALG == RDMA_MVCC
   uint64_t ts;
 #endif
 #if CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3
@@ -410,6 +422,9 @@ public:
 #endif
 #if MODE==QRY_ONLY_MODE
   uint64_t max_access;
+#endif
+#if RDMA_ONE_SIDED_CO
+  uint64_t abort_cnt;
 #endif
 };
 

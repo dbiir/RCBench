@@ -38,23 +38,24 @@ RC Row_rdma_mvcc::access(TxnManager * txn, Access *access, access_t type) {
 		bool result = false;
 		result = txn->get_version(temp_row,&change_num,txn->txn);
 		if(result == false){//no proper version: Abort
-			// printf("local %ld no version\n",temp_row->get_primary_key());
+			DEBUG_C("MVCC local txn %ld row %ld no version\n",txn->get_txn_id(), temp_row->get_primary_key());
 			rc = Abort;
 			return rc;
 		}
 		//check txn_id
 		if(temp_row->txn_id[change_num] != 0 && temp_row->txn_id[change_num] != txn->get_txn_id() + 1){
-			// printf("local %ld write by other %ld\n",temp_row->get_primary_key(),temp_row->txn_id[change_num]);
+			DEBUG_C("MVCC local txn %ld row %ld write by other %ld\n",txn->get_txn_id(),temp_row->get_primary_key(),temp_row->txn_id[change_num]);
 			rc = Abort;
 			return rc;
 		}
         uint64_t version = change_num;
 		uint64_t old_rts = temp_row->rts[version];
+		assert(temp_row->rts[version]!=-1);
 		uint64_t new_rts = txn->get_timestamp();
 		uint64_t rts_offset = access->offset + 2*sizeof(uint64_t) + HIS_CHAIN_NUM*sizeof(uint64_t) + version*sizeof(uint64_t);
 		uint64_t cas_result = txn->cas_remote_content(access->location,rts_offset,old_rts,new_rts);//lock
 		if(cas_result!=old_rts){ //CAS fail, atomicity violated
-			// printf("local %ld rts update failed old %ld now %ld new %ld\n",temp_row->get_primary_key(), old_rts, cas_result, new_rts);
+			DEBUG_C("MVCC local txn %ld row %ld rts update failed old %ld now %ld new %ld\n",txn->get_txn_id(),temp_row->get_primary_key(), old_rts, cas_result, new_rts);
 			rc = Abort;
 			return rc;			
 		}
@@ -71,7 +72,7 @@ RC Row_rdma_mvcc::access(TxnManager * txn, Access *access, access_t type) {
 		uint64_t try_lock = -1;
 		try_lock = txn->cas_remote_content(access->location,access->offset,0,lock);//lock
 		if(try_lock != 0){
-			// printf("local %ld lock failed other %ld me %ld\n",_row->get_primary_key(), try_lock, lock);
+			DEBUG_C("MVCC local txn %ld row %ld lock failed other %ld me %ld\n",txn->get_txn_id(),_row->get_primary_key(), try_lock, lock);
 			rc = Abort;
 			return rc;
 		}
@@ -79,12 +80,18 @@ RC Row_rdma_mvcc::access(TxnManager * txn, Access *access, access_t type) {
         row_t *temp_row = (row_t *)mem_allocator.alloc(row_t::get_row_size(ROW_DEFAULT_SIZE));
         memcpy(temp_row, _row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 
+		#if DEBUG_PRINTF
+		for (int i = 0; i < HIS_CHAIN_NUM; i++) {
+			DEBUG_C("MVCC txn %ld row %ld the %ld rts is %ld\n", txn->get_txn_id(),temp_row->get_primary_key(),i,temp_row->rts[i]);
+		}
+		#endif
 		uint64_t version = (temp_row->version_num)%HIS_CHAIN_NUM;
 		if((temp_row->txn_id[version] != 0 && temp_row->txn_id[version] != txn->get_txn_id() + 1)||(txn->get_timestamp() <= temp_row->rts[version])){
 			//local unlock and Abort
 			_row->_tid_word = 0;
+			assert(temp_row->rts[version]!=-1);
 			mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
-			// printf("local %ld write by other other %ld (write op)\n", temp_row->get_primary_key(), temp_row->txn_id[version]);
+			DEBUG_C("MVCC local txn %ld row %ld write by other other %ld (write op)\n", txn->get_txn_id(),temp_row->get_primary_key(), temp_row->txn_id[version]);
 			rc = Abort;
 			return rc;
 		}
@@ -97,7 +104,12 @@ RC Row_rdma_mvcc::access(TxnManager * txn, Access *access, access_t type) {
         temp_row->txn_id[version] = txn->get_txn_id() + 1;
 		temp_row->rts[version] = txn->get_timestamp();
 		temp_row->_tid_word = 0;
-		// printf("local %ld write %ld\n",temp_row->get_primary_key(),temp_row->txn_id[version]);
+		DEBUG_C("MVCC local txn %ld complete row %ld write %ld (line 107)\n",txn->get_txn_id(),temp_row->get_primary_key(),temp_row->txn_id[version]);
+		#if DEBUG_PRINTF
+		for (int i = 0; i < HIS_CHAIN_NUM; i++) {
+			DEBUG_C("MVCC txn %ld row %ld the %ld rts is %ld (after change)\n", txn->get_txn_id(),_row->get_primary_key(),i,_row->rts[i]);
+		}
+		#endif
 		txn->cur_row->copy(temp_row);
 		mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 		rc = RCOK;

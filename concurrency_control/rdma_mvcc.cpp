@@ -43,8 +43,13 @@ void * rdma_mvcc::local_write_back(TxnManager * txnMng , uint64_t num){
     int release_ver = txnMng->txn->accesses[num]->old_version_num % HIS_CHAIN_NUM;
     // printf("local %ld write commit %ld\n",temp_row->get_primary_key(),temp_row->txn_id[version_change]);
     // 3.writes the new version, RTS, start_ts, end_ts, txn-id, etc. by ONE SIDE WRITE, and unlocks the previous version's txn-id by setting it to 0
+    #if DEBUG_PRINTF
+    for (int i = 0; i < HIS_CHAIN_NUM; i++) {
+        DEBUG_C("MVCC local txn %ld row %ld the %ld rts is %ld finish\n", txnMng->get_txn_id(),temp_row->get_primary_key(),i,temp_row->rts[i]);
+    }
+    #endif
     temp_row->version_num = temp_row->version_num +1;
-
+    assert(txnMng->txn->timestamp != -1);
     temp_row->txn_id[version_change] = 0;// txnMng->get_txn_id();
     temp_row->rts[version_change] = txnMng->txn->timestamp;
     temp_row->start_ts[version_change] = txnMng->txn->timestamp;
@@ -54,6 +59,11 @@ void * rdma_mvcc::local_write_back(TxnManager * txnMng , uint64_t num){
     temp_row->end_ts[release_ver] = txnMng->txn->timestamp;
     
     temp_row->_tid_word = 0;//release lock
+    #if DEBUG_PRINTF
+    for (int i = 0; i < HIS_CHAIN_NUM; i++) {
+        DEBUG_C("MVCC local txn %ld row %ld the %ld rts is %ld (after change finish)\n", txnMng->get_txn_id(),temp_row->get_primary_key(),i,temp_row->rts[i]);
+    }
+    #endif
 }
 
 void * rdma_mvcc::remote_write_back(yield_func_t &yield,TxnManager * txnMng , uint64_t num , row_t * remote_row, uint64_t cor_id){
@@ -65,8 +75,13 @@ void * rdma_mvcc::remote_write_back(yield_func_t &yield,TxnManager * txnMng , ui
     row_t *temp_row = txnMng->read_remote_row(yield, loc, off, cor_id);
 #endif
 	row_t * row = txnMng->txn->accesses[num]->orig_row;
-    assert(temp_row->get_primary_key() == row->get_primary_key());
-
+    assert(temp_row->get_primary_key() == txnMng->txn->accesses[num]->key);
+    // row->get_primary_key());
+    #if DEBUG_PRINTF
+    for (int i = 0; i < HIS_CHAIN_NUM; i++) {
+        DEBUG_C("MVCC remote txn %ld row %ld the %ld rts is %ld finish\n", txnMng->get_txn_id(),temp_row->get_primary_key(),i,temp_row->rts[i]);
+    }
+    #endif
     // 2.get all versions of the data item, find the oldest version, and replace it with new data to write
     int version_change;
     int last_ver = (temp_row->version_num) % HIS_CHAIN_NUM;//latest version
@@ -77,7 +92,9 @@ void * rdma_mvcc::remote_write_back(yield_func_t &yield,TxnManager * txnMng , ui
     int release_ver = txnMng->txn->accesses[num]->old_version_num % HIS_CHAIN_NUM;
     // printf("remote %ld write commit %ld\n",temp_row->get_primary_key(),temp_row->txn_id[version_change]);
     // 3.writes the new version, RTS, start_ts, end_ts, txn-id, etc. by ONE SIDE WRITE, and unlocks the previous version's txn-id by setting it to 0
+    assert(temp_row->rts[(temp_row->version_num)%HIS_CHAIN_NUM]!=-1);
     temp_row->version_num = temp_row->version_num +1;
+    assert(temp_row->rts[(temp_row->version_num)%HIS_CHAIN_NUM]!=-1);
 
     temp_row->txn_id[version_change] = 0;// txnMng->get_txn_id();
     temp_row->rts[version_change] = txnMng->txn->timestamp;
@@ -98,7 +115,13 @@ void * rdma_mvcc::remote_write_back(yield_func_t &yield,TxnManager * txnMng , ui
     // char *test_buf = Rdma::get_row_client_memory(thd_id);
     // memcpy(test_buf, (char*)temp_row , operate_size);
     txnMng->write_remote_row(yield, loc, operate_size, off, (char*)temp_row, cor_id);
-
+    #if DEBUG_PRINTF
+    row_t * test_row2 = txnMng->read_remote_row(yield,loc,off,cor_id);
+    for (int i = 0; i < HIS_CHAIN_NUM; i++) {
+        DEBUG_C("MVCC remote txn %ld row %ld the %ld rts is %ld (after change finish)\n", txnMng->get_txn_id(), test_row2->get_primary_key(),i,test_row2->rts[i]);
+    }
+    mem_allocator.free(test_row2,row_t::get_row_size(ROW_DEFAULT_SIZE));
+    #endif
     mem_allocator.free(temp_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 }
 
@@ -114,7 +137,11 @@ void * rdma_mvcc::abort_release_local_lock(TxnManager * txnMng , uint64_t num){
 
 void * rdma_mvcc::abort_release_remote_lock(yield_func_t &yield, TxnManager * txnMng , uint64_t num, uint64_t cor_id){
         Transaction *txn = txnMng->txn;
+        #if RDMA_SIT == SIT_HG
+        row_t * temp_row = txn->accesses[num]->data;
+        #else
         row_t * temp_row = txn->accesses[num]->orig_row;
+        #endif
         int version = txn->accesses[num]->old_version_num % HIS_CHAIN_NUM ;//version be locked
         //int version = temp_row->version_num % HIS_CHAIN_NUM;
         // printf("remote %ld write abort %ld\n",temp_row->get_primary_key(),temp_row->txn_id[version]);
@@ -134,43 +161,31 @@ void * rdma_mvcc::abort_release_remote_lock(yield_func_t &yield, TxnManager * tx
 RC rdma_mvcc::finish(yield_func_t &yield, RC rc,TxnManager * txnMng, uint64_t cor_id){
     Transaction *txn = txnMng->txn;
 
-    int wr = 0; 
-  	//int read_set[10];
-	int read_set[txn->row_cnt - txn->write_cnt];
-	int rd = 0;
-	for (uint64_t rid = 0; rid < txn->row_cnt; rid ++) {
-		if (txn->accesses[rid]->type == WR)
-			txnMng->write_set[wr ++] = rid;
-		else
-			read_set[rd ++] = rid;
-	}
-
-    uint64_t wr_cnt = txn->write_cnt;
-
     vector<vector<uint64_t>> remote_access(g_node_cnt);
     if(rc == Abort){
-        for (uint64_t i = 0; i < wr_cnt; i++) {
-           uint64_t num = txnMng->write_set[i];
-           uint64_t remote_offset = txn->accesses[num]->offset;
-           uint64_t loc = txn->accesses[num]->location;
-	       uint64_t lock_num = txnMng->get_txn_id() + 1;
+		for (uint64_t i = 0; i < txnMng->txn->accesses.size(); i++) {
+            Access *access = txnMng->txn->accesses[i];
+            if (access->type == RD) continue;
+            uint64_t remote_offset = access->offset;
+            uint64_t loc = access->location;
+            uint64_t lock_num = txnMng->get_txn_id() + 1;
         #if USE_DBPAOR == true
-           if(loc != g_node_id) remote_access[loc].push_back(num);
-           else{ //local
-               abort_release_local_lock(txnMng,num);
-           }
+            if(loc != g_node_id && txnMng->rdma_co_one_sided()) remote_access[loc].push_back(i);
+            else{ //local
+                abort_release_local_lock(txnMng,i);
+            }
         #else
-           //lock in loop
+            //lock in loop
             // assert(txnMng->loop_cas_remote(yield,loc,remote_offset,0,lock_num,cor_id) == true);
 
-           //release lock
-           if(txn->accesses[num]->location == g_node_id){
-               abort_release_local_lock(txnMng,num);
-           }else{
-               abort_release_remote_lock(yield,txnMng,num,cor_id);
-           }
-        //    uint64_t release_lock = txnMng->cas_remote_content(yield,loc,remote_offset,lock_num,0,cor_id);
-        //    assert(release_lock == lock_num);
+            //release lock
+            if(access->location == g_node_id){
+               abort_release_local_lock(txnMng,i);
+            }else if (txnMng->rdma_co_one_sided()){
+               abort_release_remote_lock(yield,txnMng,i,cor_id);
+            }
+            // uint64_t release_lock = txnMng->cas_remote_content(yield,loc,remote_offset,lock_num,0,cor_id);
+            // assert(release_lock == lock_num);
         #endif
         }
         #if USE_DBPAOR == true
@@ -220,12 +235,16 @@ RC rdma_mvcc::finish(yield_func_t &yield, RC rc,TxnManager * txnMng, uint64_t co
         #endif
     }
     else{ //COMMIT
-       for (uint64_t i = 0; i < wr_cnt; i++) {
-           uint64_t num = txnMng->write_set[i];
-           uint64_t remote_offset = txn->accesses[num]->offset;
-           uint64_t loc = txn->accesses[num]->location;
-	       uint64_t lock_num = txnMng->get_txn_id() + 1;
-           row_t* remote_row = NULL;
+		vector<vector<uint64_t>> remote_access(g_node_cnt);
+		for (uint64_t i = 0; i < txnMng->txn->accesses.size(); i++) {
+			Access *access = txnMng->txn->accesses[i];
+			if (access->type == RD) continue;
+            uint64_t remote_offset = access->offset;
+            uint64_t loc = access->location;
+            uint64_t lock_num = txnMng->get_txn_id() + 1;
+            row_t* remote_row = NULL;
+            if (access->location == g_node_id ||
+                txnMng->rdma_co_one_sided()) {
         #if USE_DBPAOR == true
             if(loc !=  g_node_id){ //remote
                 uint64_t try_lock;
@@ -239,17 +258,17 @@ RC rdma_mvcc::finish(yield_func_t &yield, RC rc,TxnManager * txnMng, uint64_t co
                 assert(txnMng->loop_cas_remote(loc,remote_offset,0,lock_num) == true);
             }
         #else
-           //lock in loop
-           assert(txnMng->loop_cas_remote(yield,loc,remote_offset,0,lock_num,cor_id) == true);
+            //lock in loop
+            assert(txnMng->loop_cas_remote(yield,loc,remote_offset,0,lock_num,cor_id) == true);
         #endif
+            }
 
-           if(txn->accesses[num]->location == g_node_id){//local
-                local_write_back(txnMng, num);
-           }
-           else{
-                remote_write_back(yield, txnMng, num, remote_row, cor_id);
+            if(access->location == g_node_id){//local
+                local_write_back(txnMng, i);
+            } else if (txnMng->rdma_co_one_sided()){
+                remote_write_back(yield, txnMng, i, remote_row, cor_id);
                 // uint64_t release_lock = txnMng->cas_remote_content(loc,remote_offset,lock_num,0);
-           }  
+            }  
             // remote_release_lock(txnMng,txnMng->write_set[i]);//release lock
             //uint64_t release_lock = txnMng->cas_remote_content(loc,remote_offset,lock_num,0);
             //assert(release_lock == lock_num);
@@ -259,10 +278,11 @@ RC rdma_mvcc::finish(yield_func_t &yield, RC rc,TxnManager * txnMng, uint64_t co
 
 
     for (uint64_t i = 0; i < txn->row_cnt; i++) {
-        if(txn->accesses[i]->location != g_node_id){
-        //remote
-        mem_allocator.free(txn->accesses[i]->orig_row,0);
-        txn->accesses[i]->orig_row = NULL;
+        if (txn->accesses[i]->location != g_node_id &&
+            txn->accesses[i]->orig_row){
+            //remote
+            mem_allocator.free(txn->accesses[i]->orig_row,0);
+            txn->accesses[i]->orig_row = NULL;
         }
     }
     

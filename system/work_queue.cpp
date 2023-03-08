@@ -398,7 +398,7 @@ void QWorkQueue::enqueue(uint64_t thd_id, Message * msg,bool busy) {
 	entry->batch_id = msg->batch_id;
 	entry->starttime = get_sys_clock();
 	assert(ISSERVER || ISREPLICA);
-	DEBUG("Work Enqueue (%ld,%ld) %d\n",entry->txn_id,entry->batch_id,entry->rtype);
+	DEBUG_T("Work Enqueue (%ld,%ld) %d\n",entry->txn_id,entry->batch_id,entry->rtype);
 
 	uint64_t mtx_wait_starttime = get_sys_clock();
 	if(msg->rtype == CL_QRY || msg->rtype == CL_QRY_O) {
@@ -513,7 +513,7 @@ Message * QWorkQueue::dequeue(uint64_t thd_id) {
 		msg->wq_time = queue_time;
 		// DEBUG("DEQUEUE (%ld,%ld) %ld; %ld; %d,
 		// 0x%lx\n",msg->txn_id,msg->batch_id,msg->return_node_id,queue_time,msg->rtype,(uint64_t)msg);
-		DEBUG("Work Dequeue (%ld,%ld)\n",entry->txn_id,entry->batch_id);
+		DEBUG_T("Work Dequeue type %ld (%ld,%ld)\n",entry->txn_id,entry->batch_id);
 		DEBUG_M("QWorkQueue::dequeue work_queue_entry free\n");
 		mem_allocator.free(entry,sizeof(work_queue_entry));
 		INC_STATS(thd_id,work_queue_dequeue_time,get_sys_clock() - starttime);

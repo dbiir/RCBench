@@ -65,6 +65,7 @@
 #include "rdma_calvin.h"
 #include "rdma_null.h"
 #include "rdma_dslr_no_wait.h"
+#include "rdma_timetable.h"
 #include "key_xid.h"
 #include "rts_cache.h"
 #include "src/allocator_master.hh"
@@ -283,7 +284,7 @@ UInt64 rdma_index_size = (1024*1024*1024L);
 // MAAT
 UInt64 rdma_txntable_size = 30*1024*1024; //4*(1024*1024*1024L);//30*1024*1024;
 UInt64 row_set_length = floor(ROW_SET_LENGTH);
-
+// MAAT_NODES_COUNT = 
 // MVCC
 UInt64 g_max_read_req = MAX_READ_REQ;
 UInt64 g_max_pre_req = MAX_PRE_REQ;

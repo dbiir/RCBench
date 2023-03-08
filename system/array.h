@@ -75,6 +75,14 @@ public:
     add(item);
   }
 
+  bool add_unique_with_bool(T item) {
+    for(uint64_t i = 0; i < count; i++) {
+      if (items[i] == item) return false;
+    }
+    add(item);
+    return true;
+  }
+
   void add(T item){
     assert(count < capacity);
     items[count] = item;

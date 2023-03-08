@@ -21,13 +21,13 @@ RC
 Row_rdma_silo::access(TxnManager * txn, TsType type, row_t * local_row) {
 
 	if (type == R_REQ) {
-		DEBUG("READ %ld -- %ld, table name: %s \n",txn->get_txn_id(),_row->get_primary_key(),_row->get_table_name());
+		DEBUG_C("READ %ld -- %ld, table name: %s \n",txn->get_txn_id(),_row->get_primary_key(),_row->get_table_name());
 	} else if (type == P_REQ) {
-		DEBUG("WRITE %ld -- %ld \n",txn->get_txn_id(),_row->get_primary_key());
+		DEBUG_C("WRITE %ld -- %ld \n",txn->get_txn_id(),_row->get_primary_key());
 	}
 
-  //todo : lock currenct row
-  local_row->copy(_row);
+  	//todo : lock currenct row
+  	local_row->copy(_row);
 
 	return RCOK;
 }
@@ -35,9 +35,15 @@ Row_rdma_silo::access(TxnManager * txn, TsType type, row_t * local_row) {
 bool
 Row_rdma_silo::validate(ts_t tid, ts_t ts , bool in_write_set) {
   uint64_t v = _row->_tid_word;
-  DEBUG("silo try to validate lock %ld row %ld \n", v, _row->get_primary_key());
-  if (v != tid && v != 0) return false;
-  if(_row->timestamp != ts)return false;//the row has been rewrote
+//   DEBUG_C("silo try to validate lock %ld row %ld \n", v, _row->get_primary_key());
+  if (v != tid && v != 0) {
+	DEBUG_C("silo validate lock %ld row %ld abort 40\n", v, _row->get_primary_key());
+	return false;
+  }
+  if(_row->timestamp != ts){
+	DEBUG_C("silo try to validate lock %ld row %ld abort 44\n", v, _row->get_primary_key());
+	return false;//the row has been rewrote
+  }
   return true;
 }
 
@@ -69,11 +75,11 @@ Row_rdma_silo::release(yield_func_t &yield, TxnManager * txnMng , uint64_t num, 
     // assert(try_lock == lock);
 
 	result = true;
-  	DEBUG("silo %ld try to acquire lock %ld row %ld \n", txnMng->get_txn_id(), _row->_tid_word, _row->get_primary_key());
+  	DEBUG_C("silo %ld try to release lock %ld row %ld \n", txnMng->get_txn_id(), _row->_tid_word, _row->get_primary_key());
 #else
 	// assert(_tid_word == txn_id);
-  __sync_bool_compare_and_swap(&_row->_tid_word, txn_id, 0);
-  DEBUG("silo %ld try to release lock %ld row %ld \n", txn_id, _row->_tid_word, _row->get_primary_key());
+	__sync_bool_compare_and_swap(&_row->_tid_word, txn_id, 0);
+	DEBUG("silo %ld try to release lock %ld row %ld \n", txn_id, _row->_tid_word, _row->get_primary_key());
 #endif
 }
 

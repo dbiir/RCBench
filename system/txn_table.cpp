@@ -202,7 +202,7 @@ void TxnTable::release_transaction_manager(uint64_t thd_id, uint64_t txn_id, uin
       break;
 #endif
     }
-#if CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3
+#if CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3 || CC_ALG == RDMA_MVCC 
     if (t_node->txn_man->get_timestamp() < min_ts) min_ts = t_node->txn_man->get_timestamp();
 #endif
     t_node = t_node->next;
@@ -210,7 +210,7 @@ void TxnTable::release_transaction_manager(uint64_t thd_id, uint64_t txn_id, uin
   INC_STATS(thd_id,mtx[25],get_sys_clock()-prof_starttime);
   prof_starttime = get_sys_clock();
 
-#if CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3
+#if CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3 || CC_ALG == RDMA_MVCC 
   t_node = saved_t_node;
   pool[pool_id]->min_ts = min_ts;
 #endif

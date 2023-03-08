@@ -13,6 +13,7 @@
 #include "storage/row.h"
 #include "storage/table.h"
 #include "system/rdma_calvin.h"
+#include "rdma_timetable.h"
 char *Rdma::rdma_buffer; //= new char[RDMA_BUFFER_SIZE];
 char ** Rdma::ifaddr = new char *[g_total_node_cnt+20];
 
@@ -207,6 +208,15 @@ char* Rdma::get_row_client_memory(uint64_t thd_id,int num) { //num>=1
 	return temp;
 }
 
+char* Rdma::get_full_index_client_memory(uint64_t thd_id,int num) { //num>=1
+	char* temp = (char *)(client_rdma_rm->raw_ptr);
+	temp += sizeof(IndexInfo) * (max_batch_index * g_total_thread_cnt * (COROUTINE_CNT + 1));
+	temp += row_t::get_row_size(ROW_DEFAULT_SIZE) * (max_batch_index * g_total_thread_cnt * (COROUTINE_CNT + 1));
+	size_t operate_size = (RDMA_TXNTABLE_MAX)*(sizeof(RdmaTxnTableNode)+1);
+	temp += operate_size * ((num-1) * g_total_thread_cnt * (COROUTINE_CNT + 1) + thd_id);
+	return temp;
+}
+
 /*
 char* Rdma::get_table_client_memory(uint64_t thd_id) {
 	char* temp = (char *)(client_rdma_rm->raw_ptr + sizeof(IndexInfo) * g_total_thread_cnt);
@@ -317,6 +327,12 @@ void Rdma::init(){
 	}
 
   	char* rheader = rdma_global_buffer + rdma_index_size;
-	r2::AllocatorMaster<>::init(rheader,rdma_buffer_size-rdma_index_size);
+	size_t data_size = rdma_buffer_size-rdma_index_size;
+	#if CC_ALG == RDMA_MAAT || CC_ALG == RDMA_MAAT_H || \
+		CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == RDMA_WOUND_WAIT || \
+		CC_ALG == RDMA_TS ||CC_ALG == RDMA_TS1
+	data_size = data_size - rdma_txntable_size;
+	#endif
+	r2::AllocatorMaster<>::init(rheader,data_size);
 
 }

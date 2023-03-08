@@ -38,6 +38,7 @@ public:
     virtual bool isReconQuery() {return false;}
 
     // Prevent unnecessary remote messages
+    bool is_readonly;
     Array<uint64_t> partitions;
     Array<uint64_t> partitions_touched;
     Array<uint64_t> active_nodes;

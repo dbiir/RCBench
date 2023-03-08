@@ -337,6 +337,7 @@ extern uint64_t rdma_index_size;
 // MAAT
 extern uint64_t rdma_txntable_size;
 extern uint64_t row_set_length;
+extern uint64_t maat_nodes_count;
 
 extern UInt32 g_max_txn_per_part;
 extern int32_t g_load_per_server;
@@ -449,17 +450,17 @@ enum RemReqType {
     RULK,
     CL_QRY,
     CL_QRY_O,//one server but use the msg queue
-    RQRY,
+    RQRY, // 5
     RQRY_CONT,
     RFIN,
     RLK_RSP,
     RULK_RSP,
-    RQRY_RSP,
+    RQRY_RSP, // 10
     RACK,
     RACK_PREP,
     RACK_FIN,
     RTXN,
-    RTXN_CONT,
+    RTXN_CONT, // 15
     RINIT,
     RPREPARE,
     RPASS,

@@ -90,7 +90,7 @@ RC Row_lock::lock_get(lock_t type, TxnManager * txn, uint64_t* &txnids, int &txn
         // Cannot be added to the owner list.
         if (CC_ALG == NO_WAIT) {
             rc = Abort;
-      DEBUG("abort %ld,%ld %ld %lx\n", txn->get_txn_id(), txn->get_batch_id(),
+            DEBUG("abort %ld,%ld %ld %lx\n", txn->get_txn_id(), txn->get_batch_id(),
             _row->get_primary_key(), (uint64_t)_row);
       //printf("abort %ld %ld %lx\n",txn->get_txn_id(),_row->get_primary_key(),(uint64_t)_row);
             goto final;
@@ -108,22 +108,22 @@ RC Row_lock::lock_get(lock_t type, TxnManager * txn, uint64_t* &txnids, int &txn
             bool canwait = true;
             LockEntry * en;
             for(uint64_t i = 0; i < owners_size; i++) {
-              en = owners[i];
-              while (en != NULL) {
-                assert(txn->get_txn_id() != en->txn->get_txn_id());
-                assert(txn->get_timestamp() != en->txn->get_timestamp());
-                if (txn->get_timestamp() > en->txn->get_timestamp()) {
-            // printf("abort %ld %ld -- %ld --
-            // %f\n",txn->get_txn_id(),en->txn->get_txn_id(),_row->get_primary_key(),(float)(txn->get_timestamp()
-            // - en->txn->get_timestamp()) / BILLION);
-                  INC_STATS(txn->get_thd_id(), twopl_diff_time,
-                      (txn->get_timestamp() - en->txn->get_timestamp()));
-                  canwait = false;
-                  break;
+                en = owners[i];
+                while (en != NULL) {
+                    assert(txn->get_txn_id() != en->txn->get_txn_id());
+                    assert(txn->get_timestamp() != en->txn->get_timestamp());
+                    if (txn->get_timestamp() > en->txn->get_timestamp()) {
+                    // printf("abort %ld %ld -- %ld --
+                    // %f\n",txn->get_txn_id(),en->txn->get_txn_id(),_row->get_primary_key(),(float)(txn->get_timestamp()
+                    // - en->txn->get_timestamp()) / BILLION);
+                    INC_STATS(txn->get_thd_id(), twopl_diff_time,
+                        (txn->get_timestamp() - en->txn->get_timestamp()));
+                    canwait = false;
+                    break;
+                    }
+                    en = en->next;
                 }
-                en = en->next;
-              }
-        if (!canwait) break;
+                if (!canwait) break;
             } //每一个owner是一个事务，而一个事务可能加多个锁
             if (canwait) {
                 // insert txn to the right position

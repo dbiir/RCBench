@@ -27,7 +27,8 @@
 #define SIT_COROUTINE   3
 #define SIT_DBPA        4
 #define SIT_ALL         5
-#define RDMA_SIT SIT_COROUTINE
+#define SIT_HG         6
+#define RDMA_SIT 6
 #if RDMA_SIT == SIT_TCP
   #define RDMA_ONE_SIDE false
   #define RDMA_TWO_SIDE false
@@ -68,6 +69,12 @@
   #define USE_COROUTINE true
   #define USE_DBPAOR true
   #define SERVER_GENERATE_QUERIES true
+#elif RDMA_SIT == SIT_HG
+  #define RDMA_ONE_SIDE true
+  #define RDMA_TWO_SIDE true
+  #define USE_COROUTINE false
+  #define USE_DBPAOR false
+  #define SERVER_GENERATE_QUERIES false
 #endif
 /************RDMA TYPE**************/
 #define CHANGE_TCP_ONLY 0
@@ -103,7 +110,7 @@
 #define SECOND 200 // Set the queue monitoring time.
 // #define THD_ID_QUEUE
 #define ONE_NODE_RECIEVE 0 // only node 0 will receive the txn query
-#define USE_WORK_NUM_THREAD false
+#define USE_WORK_NUM_THREAD true
 #define TXN_QUEUE_PERCENT 0.0 // The proportion of the transaction to take from txn_queue firstly.
 #define MALLOC_TYPE 0 // 0 represent normal malloc. 1 represent je-malloc
 // ! end of these parameters
@@ -116,7 +123,7 @@
 // Simulation + Hardware
 /***********************************************/
 #define NODE_CNT 4
-#define THREAD_CNT 8
+#define THREAD_CNT 4
 #define REM_THREAD_CNT 1
 #define SEND_THREAD_CNT 1
 #define COROUTINE_CNT 8
@@ -157,7 +164,7 @@
 #define TIME_ENABLE         true //STATS_ENABLE
 
 #define FIN_BY_TIME true
-#define MAX_TXN_IN_FLIGHT 20000
+#define MAX_TXN_IN_FLIGHT 16
 
 /***********************************************/
 // Memory System
@@ -184,9 +191,9 @@
 // Message Passing
 /***********************************************/
 #define TPORT_TYPE tcp
-#define TPORT_PORT 7100
-#define TPORT_TWOSIDE_PORT 7300
-#define RDMA_TPORT 7200
+#define TPORT_PORT 7300
+#define TPORT_TWOSIDE_PORT (TPORT_PORT+100)
+#define RDMA_TPORT (TPORT_PORT+200)
 #define SET_AFFINITY true
 
 #define MAX_TPORT_NAME 128
@@ -212,12 +219,12 @@
 //RDMA_NO_WAIT2, RDMA_WAIT_DIE2:no matter read or write, mutex lock is used 
 #define ISOLATION_LEVEL SERIALIZABLE
 
-#define CC_ALG RDMA_MAAT
+#define CC_ALG RDMA_MAAT_H
 
 #define YCSB_ABORT_MODE false
 #define QUEUE_C  APACITY_NEW 1000000
 
-#define DEBUG_PRINTF  false
+
 
 #if RDMA_ONE_SIDE 
 #define BATCH_INDEX_AND_READ false //keep this "false", a fail test for SILO
@@ -311,13 +318,26 @@
 #define ATOMIC_WORD					false
 // [RDMA_RETRY]
 #define MAX_RETRY_COUNT 1
-// [RDMA_MAAT]
+
+// [RDMA TIMETABLE]
+#if RDMA_SIT == SIT_HG
+#define RDMA_TXNTABLE_MAX (MAX_TXN_IN_FLIGHT*NODE_CNT)
+#else
 #define RDMA_TXNTABLE_MAX (COROUTINE_CNT + 1) * THREAD_CNT
+#endif
+// [RDMA_MAAT]
 #define COMMIT_ADJUST false
+#if RDMA_SIT == SIT_HG
+#define MAAT_NODES_COUNT 1
+#else
 #define MAAT_NODES_COUNT 2
+#endif
 // [RDMA_TS1]
+#if RDMA_SIT == SIT_HG
+#define RDMA_TSSTATE_COUNT 1
+#else
 #define RDMA_TSSTATE_COUNT 5
-// [RDMA_TS1]
+#endif
 #define USE_READ_WAIT_QUEUE false
 #define YIELD_WHEN_WAITING_READ false
 #define TS_RETRY_COUNT int(ZIPF_THETA * 20 + 1)
@@ -359,7 +379,7 @@
 #if RDMA_SIDED_EXP
 #define PART_PER_TXN 2
 #define REQ_PER_QUERY 10
-#define CC_ALG RDMA_MAAT
+#define CC_ALG RDMA_MAAT_H
 #else
 #define PART_PER_TXN 2
 #define REQ_PER_QUERY 10
@@ -370,7 +390,7 @@
 #define INIT_PARALLELISM 1
 #define SYNTH_TABLE_SIZE 16777216
 #define ZIPF_THETA 0.2
-#define TXN_WRITE_PERC 0.2
+#define TXN_WRITE_PERC 1
 #define TUP_WRITE_PERC 0.2
 #define SCAN_PERC           0
 #define SCAN_LEN          20
@@ -467,7 +487,7 @@ enum PPSTxnType {
 
 // [RDMA_MAAT]
 #if WORKLOAD == YCSB
-#define ROW_SET_LENGTH int(ZIPF_THETA * 50 + 10)
+#define ROW_SET_LENGTH int(ZIPF_THETA * 30 + 5)
 #define WAIT_QUEUE_LENGTH int(ZIPF_THETA * 10 + 3)
 #else
 #define WAIT_QUEUE_LENGTH int(PERC_PAYMENT * PERC_PAYMENT * 100 + 3)
@@ -484,6 +504,7 @@ enum PPSTxnType {
 #define IDX_VERB          false
 #define VERB_ALLOC          true
 
+#define DEBUG_PRINTF  false
 #define DEBUG_LOCK          false
 #define DEBUG_TIMESTAMP       false
 #define DEBUG_SYNTH         false
@@ -491,7 +512,8 @@ enum PPSTxnType {
 #define DEBUG_DISTR false
 #define DEBUG_ALLOC false
 #define DEBUG_RACE false
-#define DEBUG_TXN true
+#define DEBUG_TXN false
+#define DEBUG_CON false
 #define DEBUG_TIMELINE        false
 #define DEBUG_BREAKDOWN       false
 #define DEBUG_LATENCY       false
@@ -555,7 +577,7 @@ enum PPSTxnType {
 #define RDMA_NO_WAIT 31
 #define RDMA_NO_WAIT2 32
 #define RDMA_WAIT_DIE2 33
-#define RDMA_TS1 34
+#define RDMA_TS1 34 // TO with cascading abort
 #define RDMA_MAAT 35
 #define RDMA_CICADA 36
 #define RDMA_CALVIN 38
@@ -566,44 +588,44 @@ enum PPSTxnType {
 #define RDMA_WAIT_DIE 42
 #define RDMA_WOUND_WAIT 43
 #define RDMA_MOCC 44
-#define RDMA_TS 46
+#define RDMA_TS 46  // TO without cascading abort
 #define RDMA_DSLR_NO_WAIT 45
 #define RDMA_MAAT_H 47
 #define RDMA_NO_WAIT_H 48
 // hg
-#define HG_ID 7
+#define HG_ID 5
 #if HG_ID == 0
-#define RDMA_ONE_MAAT_RW false
-#define RDMA_ONE_MAAT_VA false
-#define RDMA_ONE_MAAT_CO false
+#define RDMA_ONE_SIDED_RW false
+#define RDMA_ONE_SIDED_VA false
+#define RDMA_ONE_SIDED_CO false
 #elif HG_ID == 1
-#define RDMA_ONE_MAAT_RW true
-#define RDMA_ONE_MAAT_VA false
-#define RDMA_ONE_MAAT_CO false
+#define RDMA_ONE_SIDED_RW true
+#define RDMA_ONE_SIDED_VA false
+#define RDMA_ONE_SIDED_CO false
 #elif HG_ID == 2
-#define RDMA_ONE_MAAT_RW false
-#define RDMA_ONE_MAAT_VA true
-#define RDMA_ONE_MAAT_CO false
+#define RDMA_ONE_SIDED_RW false
+#define RDMA_ONE_SIDED_VA true
+#define RDMA_ONE_SIDED_CO false
 #elif HG_ID == 3
-#define RDMA_ONE_MAAT_RW false
-#define RDMA_ONE_MAAT_VA false
-#define RDMA_ONE_MAAT_CO true
+#define RDMA_ONE_SIDED_RW false
+#define RDMA_ONE_SIDED_VA false
+#define RDMA_ONE_SIDED_CO true
 #elif HG_ID == 4
-#define RDMA_ONE_MAAT_RW true
-#define RDMA_ONE_MAAT_VA true
-#define RDMA_ONE_MAAT_CO false
+#define RDMA_ONE_SIDED_RW true
+#define RDMA_ONE_SIDED_VA true
+#define RDMA_ONE_SIDED_CO false
 #elif HG_ID == 5
-#define RDMA_ONE_MAAT_RW false
-#define RDMA_ONE_MAAT_VA true
-#define RDMA_ONE_MAAT_CO true
+#define RDMA_ONE_SIDED_RW false
+#define RDMA_ONE_SIDED_VA true
+#define RDMA_ONE_SIDED_CO true
 #elif HG_ID == 6
-#define RDMA_ONE_MAAT_RW true
-#define RDMA_ONE_MAAT_VA false
-#define RDMA_ONE_MAAT_CO true
+#define RDMA_ONE_SIDED_RW true
+#define RDMA_ONE_SIDED_VA false
+#define RDMA_ONE_SIDED_CO true
 #elif HG_ID == 7
-#define RDMA_ONE_MAAT_RW true
-#define RDMA_ONE_MAAT_VA true
-#define RDMA_ONE_MAAT_CO true
+#define RDMA_ONE_SIDED_RW true
+#define RDMA_ONE_SIDED_VA true
+#define RDMA_ONE_SIDED_CO true
 #endif
 // TIMESTAMP allocation method.
 #define TS_MUTEX          1
@@ -652,8 +674,8 @@ enum PPSTxnType {
 #define PROG_TIMER 10 * BILLION // in s
 #define BATCH_TIMER 0
 #define SEQ_BATCH_TIMER 5 * 1 * MILLION // ~5ms -- same as CALVIN paper
-#define DONE_TIMER 1 * 20 * BILLION // ~1 minutes
-#define WARMUP_TIMER 1 * 10 * BILLION // ~1 minutes
+#define DONE_TIMER 1 * 60 * BILLION // ~1 minutes
+#define WARMUP_TIMER 1 * 60 * BILLION // ~1 minutes
 
 #define SEED 0
 #define SHMEM_ENV false

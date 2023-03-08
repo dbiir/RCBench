@@ -30,7 +30,6 @@ public:
     void setup();
     void statqueue(uint64_t thd_id, Message * msg, uint64_t starttime);
     void process(yield_func_t &yield, Message * msg, uint64_t cor_id);
-    void fakeprocess(yield_func_t &yield, Message * msg, uint64_t cor_id);
     void check_if_done(RC rc);
     void release_txn_man();
     void commit();

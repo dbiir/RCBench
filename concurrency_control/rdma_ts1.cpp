@@ -83,12 +83,12 @@ RC RDMA_ts1::validate(yield_func_t &yield, TxnManager * txnMng, uint64_t cor_id)
 		retry:
 			if(wid % g_node_cnt == g_node_id) {
 				state = rdma_txn_table.local_get_state(txnMng->get_thd_id(), wid);
-			} else {
+			} else if (txnMng->rdma_va_one_sided()){//lock remote
 				state = rdma_txn_table.remote_get_state(yield, txnMng, wid, cor_id);
-			}
+			} else continue;
 			if (state == TS_RUNNING) goto retry;
 			if (state == TS_ABORTING) {
-				// printf("[级联回滚]事务号:%ld, 级联事务: %ld\n",txnMng->get_txn_id(),wid);
+				DEBUG_C("[级联回滚]事务号:%ld, 级联事务: %ld\n",txnMng->get_txn_id(),wid);
 				return Abort;
 			} 
 		}

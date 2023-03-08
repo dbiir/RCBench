@@ -227,6 +227,7 @@ public:
   double worker_msg_time;
   double worker_waitcomp_time;
   double worker_proto_wait_time;
+  double worker_get_txn_time;
   uint64_t worker_yield_cnt;
   uint64_t worker_waitcomp_cnt;
   uint64_t worker_oneside_cnt;
