@@ -1110,6 +1110,9 @@ void TxnManager::cleanup(yield_func_t &yield, RC rc, uint64_t cor_id) {
 	ts_t starttime = get_sys_clock();
 	uint64_t row_cnt = txn->accesses.get_count();
 	assert(txn->accesses.get_count() == txn->row_cnt);
+	if (WORKLOAD == YCSB && row_cnt <= g_req_per_query) {
+		printf("row_cnt: %ld.\n", row_cnt);
+	}
 	assert((WORKLOAD == YCSB && row_cnt <= g_req_per_query) || (WORKLOAD == TPCC && row_cnt <= g_max_items_per_txn*2 + 3));
 
 	DEBUG_T("Cleanup %ld %ld %d\n",get_txn_id(),row_cnt, rc);
@@ -1305,6 +1308,7 @@ RC TxnManager::get_row(yield_func_t &yield,row_t * row, access_t type, row_t *& 
 	access->orig_row = row; //access->data == access->orig_row
 	access->key = row->get_primary_key();
 	access->location = g_node_id;
+	access->version = version_num[version_num.size()-1];
 
 #if CC_ALG == SILO
 	access->tid = last_tid;
@@ -1362,7 +1366,7 @@ RC TxnManager::get_row(yield_func_t &yield,row_t * row, access_t type, row_t *& 
 	txn->accesses.add(access);
 	DEBUG_C("TxnManager %ld enter access key %ld 1 \n", txn->txn_id, access->key);
 	for (int i = 0; i < txn->accesses.size(); i++) {
-		DEBUG_C("TxnManager %ld access %ld data %p pointer %p-%p key %ld g_node_id %ld\n", txn->txn_id, i,txn->accesses[i]->data, txn->accesses[i], txn->accesses[i]->orig_row, txn->accesses[i]->key, txn->accesses[i]->location);
+		DEBUG_C("TxnManager %ld access %ld data %p pointer %p-%p key %ld version: %lu g_node_id %ld\n", txn->txn_id, i,txn->accesses[i]->data, txn->accesses[i], txn->accesses[i]->orig_row, txn->accesses[i]->key, txn->accesses[i]->version, txn->accesses[i]->location);
 	}
 #endif
    	// DEBUG_T("txn %ld access orig_row %p, key %ld\n",txn->txn_id,access->orig_row,access->orig_row->get_primary_key());
@@ -2952,11 +2956,11 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 							find = true;
 							version = remote_row->cicada_version[i].key;
 						}
-						if(retry_time > CICADA_MAX_RETRY_TIME) {
-							rc = Abort;
-							// printf("r find row %ld version and failed:%d state:%d Wts:%lu: txnts:%lu\n",remote_row->get_primary_key(),  cnt, remote_row->cicada_version[i].state, remote_row->cicada_version[i].Wts, this->get_timestamp());
-							INC_STATS(this->get_thd_id(), cicada_case5_cnt, 1);
-						}
+						// if(retry_time > CICADA_MAX_RETRY_TIME) {
+						// 	rc = Abort;
+						// 	// printf("r find row %ld version and failed:%d state:%d Wts:%lu: txnts:%lu\n",remote_row->get_primary_key(),  cnt, remote_row->cicada_version[i].state, remote_row->cicada_version[i].Wts, this->get_timestamp());
+						// 	INC_STATS(this->get_thd_id(), cicada_case5_cnt, 1);
+						// }
 					}				
 				} else {
 					rc = RCOK;
@@ -3036,10 +3040,10 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 							rc = RCOK;
 							find = true;
 						}
-						if(retry_time > 1) {
-							rc = Abort;
-							INC_STATS(this->get_thd_id(), cicada_case6_cnt, 1);
-						}
+						// if(retry_time > 1) {
+						// 	rc = Abort;
+						// 	INC_STATS(this->get_thd_id(), cicada_case6_cnt, 1);
+						// }
 					}
 				} else {	
 					rc = RCOK;
@@ -4427,6 +4431,7 @@ RC TxnManager::preserve_access(row_t *&row_local,itemid_t* m_item,row_t *test_ro
 	access->key = test_row->get_primary_key();
 	access->location = loc;
 	access->offset = m_item->offset;
+	access->version = version_num[version_num.size()-1];
 #endif
 
 #if CC_ALG == RDMA_SILO || CC_ALG == RDMA_MOCC
@@ -4454,7 +4459,7 @@ RC TxnManager::preserve_access(row_t *&row_local,itemid_t* m_item,row_t *test_ro
 
     if (type == WR) ++txn->write_cnt;//this->last_type = WR
     txn->accesses.add(access);
-		if (access->orig_row == nullptr) {
+	if (access->orig_row == nullptr) {
 		DEBUG_C("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 4459");
 	}
 	DEBUG_C("TxnManager %ld enter access key %ld 4\n", txn->txn_id, access->key);

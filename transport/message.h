@@ -116,7 +116,8 @@ public:
   uint64_t commit_timestamp;
 #endif
 #if ! RDMA_ONE_SIDED_CO && RDMA_ONE_SIDED_RW && RDMA_ONE_SIDED_VA
-  Array<Access*> accesses;
+  Array<uint64_t> set_first;
+  Array<uint64_t> set_second;
 #endif
 };
 
@@ -181,7 +182,7 @@ public:
   uint64_t greatest_write_timestamp;
   uint64_t greatest_read_timestamp;
 #endif
-#if RDMA_ONE_SIDED_CO
+#if !RDMA_ONE_SIDED_RW && (RDMA_ONE_SIDED_VA || RDMA_ONE_SIDED_CO)
   Array<Access*> accesses;
 #endif
 };
@@ -206,8 +207,10 @@ public:
 #endif
 
   // for cicada uncommitted set
+#if !RDMA_ONE_SIDED_VA && RDMA_ONE_SIDED_CO
   Array<uint64_t> set_first;
   Array<uint64_t> set_second;
+#endif
 
   // For Calvin PPS: part keys from secondary lookup for sequencer response
   Array<uint64_t> part_keys;
@@ -235,6 +238,9 @@ public:
   Array<uint64_t> uncommitted_writes_y;
   uint64_t greatest_write_timestamp;
   uint64_t greatest_read_timestamp;
+#endif
+#if CC_ALG == RDMA_CICADA
+  uint64_t ts;
 #endif
 #if RDMA_ONE_SIDED_RW && !RDMA_ONE_SIDED_VA
   Array<Access*> accesses;

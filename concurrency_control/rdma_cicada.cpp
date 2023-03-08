@@ -103,11 +103,11 @@ RC RDMA_Cicada::validate(yield_func_t &yield, TxnManager * txnMng, uint64_t cor_
 					access->orig_row->version_cnt ++;
 					access->orig_row->cicada_version[(access->orig_row->version_cnt) % HIS_CHAIN_NUM].init(access->orig_row->version_cnt, txnMng->get_timestamp(), txnMng->get_timestamp());
 					txnMng->uncommitted_set.insert(std::make_pair(access->orig_row->get_primary_key(), access->orig_row->version_cnt));
-					DEBUG("TXN %lu, add a num:%ld version:%ld in key:%ld\n",txnMng->get_txn_id() , txnMng->write_set[j], access->orig_row->version_cnt, access->orig_row->get_primary_key());
+					DEBUG_C("TXN %lu, add a num:%ld version:%ld in key:%ld\n",txnMng->get_txn_id() , txnMng->write_set[j], access->orig_row->version_cnt, access->orig_row->get_primary_key());
 					break;
 				} else {
 					INC_STATS(txnMng->get_thd_id(), cicada_case1_cnt, 1);
-					DEBUG("TXN: %lu write access->orig_row->cicada_version[%d].key:%ld, txnMng->version_num[%d] :%ld, row_state: %d.\n",
+					DEBUG_C("TXN: %lu write access->orig_row->cicada_version[%d].key:%ld, txnMng->version_num[%d] :%ld, row_state: %d.\n",
 							 txnMng->get_txn_id(), i, access->orig_row->cicada_version[i].key, txnMng->write_set[j], txnMng->version_num[txnMng->write_set[j]], access->orig_row->cicada_version[i].state);
 					DEBUG_C("Write Abort 2\n");
 					rc = Abort;
@@ -153,7 +153,7 @@ RC RDMA_Cicada::validate(yield_func_t &yield, TxnManager * txnMng, uint64_t cor_
 					rc = Abort;
 					INC_STATS(txnMng->get_thd_id(), cicada_case3_cnt, 1);
 					// printf("Abort 6\n");
-					DEBUG("TXN %ld read access->orig_row->cicada_version[%d].key:%ld, txnMng->version_num[%d] :%ld, row_state: %d.\n", txnMng->get_txn_id(), i, access->orig_row->cicada_version[i].key, read_set[j], txnMng->version_num[read_set[j]], access->orig_row->cicada_version[i].state);
+					DEBUG_C("TXN %ld read access->orig_row->cicada_version[%d].key:%ld, txnMng->version_num[%d] :%ld, row_state: %d.\n", txnMng->get_txn_id(), i, access->orig_row->cicada_version[i].key, read_set[j], txnMng->version_num[read_set[j]], access->orig_row->cicada_version[i].state);
 					DEBUG_C("Read Abort 2\n");
 					break;
 				}

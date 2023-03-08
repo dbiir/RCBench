@@ -80,7 +80,7 @@
 #define CHANGE_TCP_ONLY 0
 #define CHANGE_MSG_QUEUE 1
 
-#define HIS_CHAIN_NUM 8
+#define HIS_CHAIN_NUM 4
 #define USE_CAS
 #define MAX_SEND_SIZE 1
 
@@ -587,7 +587,7 @@ enum PPSTxnType {
 #define RDMA_MAAT_H 47
 #define RDMA_NO_WAIT_H 48
 // hg
-#define HG_ID 3
+#define HG_ID 6
 #if HG_ID == 0
 #define RDMA_ONE_SIDED_RW false
 #define RDMA_ONE_SIDED_VA false

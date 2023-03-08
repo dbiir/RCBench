@@ -230,8 +230,8 @@ def ycsb_hg():
     scnt = [1]
     rcnt = [1]
     skew = [0.2]
-    hgid = [3]
-    # hgid = [1,2,3,4,5,6]
+    # hgid = [6]
+    hgid = [1,2,3,4,5,6]
     # hgid = [4,5] #for 2pl
     sit = 6
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","SYNTH_TABLE_SIZE","HG_ID","RDMA_SIT",
