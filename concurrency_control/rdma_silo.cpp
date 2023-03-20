@@ -147,17 +147,17 @@ RC RDMA_silo::validate_rdma_silo(yield_func_t &yield, TxnManager * txnMng, uint6
 		    // success = access->orig_row->manager->validate(access->tid, false);
 			success = access->orig_row->manager->validate(txnMng->get_txn_id(), access->timestamp,false);
 			if(!success){
-				 INC_STATS(txnMng->get_thd_id(), local_readset_validate_fail_abort, 1); //48%
-				 INC_STATS(txnMng->get_thd_id(), valid_abort_cnt, 1);
+				INC_STATS(txnMng->get_thd_id(), local_readset_validate_fail_abort, 1); //48%
+				INC_STATS(txnMng->get_thd_id(), valid_abort_cnt, 1);
 			}
        	}
 		else{//remote
         	success = validate_rw_remote(yield, txnMng , read_set[i], cor_id);
 			if(success)DEBUG("silo %ld validate read row %ld success \n",txnMng->get_txn_id(),access->key);
 			if(!success){
-				 INC_STATS(txnMng->get_thd_id(), remote_readset_validate_fail_abort, 1);//32%
-				 INC_STATS(txnMng->get_thd_id(), valid_abort_cnt, 1);
-				 DEBUG("silo %ld validate read row %ld fail \n",txnMng->get_txn_id(),access->key);
+				INC_STATS(txnMng->get_thd_id(), remote_readset_validate_fail_abort, 1);//32%
+				INC_STATS(txnMng->get_thd_id(), valid_abort_cnt, 1);
+				DEBUG("silo %ld validate read row %ld fail \n",txnMng->get_txn_id(),access->key);
 			}
 
 		}
@@ -187,9 +187,9 @@ RC RDMA_silo::validate_rdma_silo(yield_func_t &yield, TxnManager * txnMng, uint6
 			// success = true;
 			if(success)DEBUG("silo %ld validate write row %ld success \n",txnMng->get_txn_id(),access->key);
 			if(!success){
-				 INC_STATS(txnMng->get_thd_id(), remote_writeset_validate_fail_abort, 1);
-				 INC_STATS(txnMng->get_thd_id(), valid_abort_cnt, 1);
-				 DEBUG("silo %ld validate write row %ld fail\n",txnMng->get_txn_id(),access->key);
+				INC_STATS(txnMng->get_thd_id(), remote_writeset_validate_fail_abort, 1);
+				INC_STATS(txnMng->get_thd_id(), valid_abort_cnt, 1);
+				DEBUG("silo %ld validate write row %ld fail\n",txnMng->get_txn_id(),access->key);
 			}
 
 		}

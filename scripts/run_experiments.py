@@ -91,7 +91,7 @@ for exp in exps:
                 if not found_cfg:
                     f_cfg.write(line)
 
-        cmd = "make clean; make deps; make -j16"
+        cmd = "make clean; make deps; make -j32"
         print cmd
         os.system(cmd)
         if not execute:
@@ -136,11 +136,17 @@ for exp in exps:
                         cmd = 'scp {}/{} {}:/{}'.format(PATH, f, m, uname)
                     print cmd
                     os.system(cmd)
-                    # if cluster == 'istc':
-                    #     cmd = 'ssh {}.csail.mit.edu:/{}/'.format(PATH, f, m, uname)
-                    # elif cluster == 'vcloud':
-                    #     os.system('./scripts/kill.sh {}'.format(m))
-                    #     cmd = 'ssh {}/{} {}:/{}'.format(PATH, f, m, uname)
+
+                # for m in machines:
+                #     os.system('./scripts/kill.sh {}'.format(m))
+
+                # for f in files:
+                #     cmd = 'cp {}/{} /{}'.format(PATH, f, uname)
+                #     print cmd
+                #     os.system(cmd)
+                # cmd = 'sleep 1'
+                # os.system(cmd)
+
                 print("Deploying: {}".format(output_f))
                 os.chdir('./scripts')
                 if cluster == 'istc':

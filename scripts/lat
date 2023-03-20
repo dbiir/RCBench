@@ -1,7 +1,7 @@
-RDMA_MOCC 
+RDMA_MVCC 
 abort_time txn_manager_time txn_validate_time txn_cleanup_time txn_total_process_time
-9893.028763
+36820.176574
 0.0
-10013.125412
-2.010171
-0.00109
+4780.256921
+3.20283
+44.130072

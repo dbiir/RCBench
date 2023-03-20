@@ -86,7 +86,7 @@ RC RDMA_ts1::validate(yield_func_t &yield, TxnManager * txnMng, uint64_t cor_id)
 			} else {
 				state = rdma_txn_table.remote_get_state(yield, txnMng, wid, cor_id);
 			}
-			if (state == TS_RUNNING) goto retry;
+			if (state == TS_RUNNING && !simulation->is_done()) goto retry;
 			if (state == TS_ABORTING) {
 				// printf("[级联回滚]事务号:%ld, 级联事务: %ld\n",txnMng->get_txn_id(),wid);
 				return Abort;

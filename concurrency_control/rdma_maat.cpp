@@ -473,7 +473,8 @@ RC RDMA_Maat::remote_abort(yield_func_t &yield, TxnManager * txnMng, Access * da
     // assert(try_lock == 0);
     row_t *temp_row = txnMng->read_remote_row(yield,loc,off, cor_id);
 #endif
-	assert(temp_row->get_primary_key() == data->data->get_primary_key());
+	if(temp_row->get_primary_key() != data->data->get_primary_key()) return Abort;
+	// else if (temp_row->get_primary_key() != data->data->get_primary_key()) assert(false);
 
     char *tmp_buf2 = Rdma::get_row_client_memory(thd_id);
 
@@ -547,7 +548,7 @@ RC RDMA_Maat::remote_commit(yield_func_t &yield, TxnManager * txnMng, Access * d
 	}
     row_t *temp_row = txnMng->read_remote_row(yield, loc,off, cor_id);
 #endif
-	assert(temp_row->get_primary_key() == data->data->get_primary_key());
+	if (temp_row->get_primary_key() != data->data->get_primary_key()) return Abort;
 
     char *tmp_buf2 = Rdma::get_row_client_memory(thd_id);
 	uint64_t txn_commit_ts = txnMng->get_commit_timestamp();

@@ -185,6 +185,7 @@ RC IndexRdma::index_read(idx_key_t key, itemid_t * &item, int part_id) {
 	item->location = index_info[index_key].address;
 	item->type = index_info[index_key].type;
 	item->valid = index_info[index_key].valid;
+	item->key = index_info[index_key].key;
 
 	return rc;
 
@@ -220,6 +221,7 @@ RC IndexRdma::index_read(idx_key_t key, itemid_t * &item,int part_id, int thd_id
 	item->location = index_info[index_key].address;
 	item->type = index_info[index_key].type;
 	item->valid = index_info[index_key].valid;
+	item->key = index_info[index_key].key;
 
 	return rc;
 }

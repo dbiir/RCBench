@@ -260,6 +260,7 @@ RC YCSBTxnManager::send_remote_one_side_request(yield_func_t &yield, ycsb_reques
 #else
     m_item = ycsb_read_remote_index(yield, req, cor_id);
 #endif
+	if (m_item == nullptr) return Abort;
 	uint64_t part_id = _wl->key_to_part( req->key );
     uint64_t loc = GET_NODE_ID(part_id);
 	assert(loc != g_node_id);

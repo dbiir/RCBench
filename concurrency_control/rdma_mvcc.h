@@ -43,10 +43,10 @@ private:
 
     uint64_t remote_lock(yield_func_t &yield, TxnManager * txnMng , uint64_t num, uint64_t cor_id);
     uint64_t local_lock(TxnManager * txnMng , uint64_t num);
-    void * local_write_back(TxnManager * txnMng , uint64_t num);
-    void * remote_write_back(yield_func_t &yield, TxnManager * txnMng , uint64_t num , row_t* remote_row, uint64_t cor_id);
-    void * abort_release_local_lock(TxnManager * txnMng , uint64_t num);
-    void * abort_release_remote_lock(yield_func_t &yield, TxnManager * txnMng , uint64_t num, uint64_t cor_id);
+    void local_write_back(TxnManager * txnMng , uint64_t num);
+    void remote_write_back(yield_func_t &yield, TxnManager * txnMng , uint64_t num , row_t* remote_row, uint64_t cor_id);
+    void abort_release_local_lock(TxnManager * txnMng , uint64_t num);
+    void abort_release_remote_lock(yield_func_t &yield, TxnManager * txnMng , uint64_t num, uint64_t cor_id);
   
 
 	MVReqEntry * readreq_mvcc;

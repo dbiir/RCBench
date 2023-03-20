@@ -93,7 +93,7 @@
 #define TAIL_DTL false
 #define SAVE_HISTROY_WITH_EMPTY_OPT false
 #define DYNAMIC_SEQ_LEN false
-#define ONLY_ONE_HOME false
+#define ONLY_ONE_HOME true
 #define NO_PHYSICAL false
 //InputActionSequenceCreator
 #define INPUT_FILE_PATH "./input.txt"
@@ -123,16 +123,16 @@
 /***********************************************/
 // Simulation + Hardware
 /***********************************************/
-#define NODE_CNT 4
+#define NODE_CNT 8
 #define THREAD_CNT 24
 #define REM_THREAD_CNT 1
 #define SEND_THREAD_CNT 1
-#define COROUTINE_CNT 8
+#define COROUTINE_CNT 4
 #define CORE_CNT 2
 // PART_CNT should be at least NODE_CNT
 #define PART_CNT NODE_CNT
 #define CLIENT_NODE_CNT 1
-#define CLIENT_THREAD_CNT 4
+#define CLIENT_THREAD_CNT 2
 #define CLIENT_REM_THREAD_CNT 1
 #define CLIENT_SEND_THREAD_CNT 1
 #define CLIENT_RUNTIME false
@@ -165,7 +165,7 @@
 #define TIME_ENABLE         true //STATS_ENABLE
 
 #define FIN_BY_TIME true
-#define MAX_TXN_IN_FLIGHT 10000
+#define MAX_TXN_IN_FLIGHT 20000
 
 /***********************************************/
 // Memory System
@@ -220,7 +220,7 @@
 //RDMA_NO_WAIT2, RDMA_WAIT_DIE2:no matter read or write, mutex lock is used 
 #define ISOLATION_LEVEL SERIALIZABLE
 
-#define CC_ALG RDMA_MOCC
+#define CC_ALG RDMA_MVCC
 
 #define YCSB_ABORT_MODE false
 #define QUEUE_C  APACITY_NEW 1000000
@@ -291,7 +291,7 @@
 
 // [TIMESTAMP]
 #define TS_TWR            false
-#define TS_ALLOC          TS_CLOCK
+#define TS_ALLOC          TS_CAS
 #define TS_BATCH_ALLOC        false
 #define TS_BATCH_NUM        1
 // [MVCC]
@@ -364,8 +364,8 @@
 #define DATA_PERC 100
 #define ACCESS_PERC 0.03
 #define INIT_PARALLELISM 1
-#define SYNTH_TABLE_SIZE 41943040
-#define ZIPF_THETA 0.95
+#define SYNTH_TABLE_SIZE 8388608
+#define ZIPF_THETA 0.8
 #define TXN_WRITE_PERC 1
 #define TUP_WRITE_PERC 0.2
 #define SCAN_PERC           0

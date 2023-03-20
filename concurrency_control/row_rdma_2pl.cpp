@@ -169,11 +169,12 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
 #endif
 #if CC_ALG == RDMA_WAIT_DIE2
     		//直接RDMA CAS加锁
+        int retry_time = 0;
     local_retry_lock:
         uint64_t loc = g_node_id;
         uint64_t try_lock = -1;
+        retry_time += 1;
         
-
         uint64_t thd_id = txn->get_thd_id();
 		auto mr = client_rm_handler->get_reg_attr().value();
         uint64_t tts = txn->get_timestamp();
@@ -182,7 +183,7 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
             _row->lock_owner = txn->get_txn_id();
             rc = RCOK;
         }
-		if(try_lock != 0){ //如果CAS失败
+		if(try_lock != 0 && retry_time <= MAX_RETRY_TIME){ //如果CAS失败
 			if(tts <= try_lock){  //wait
     #if DEBUG_PRINTF
             printf("---local_retry_lock\n");
@@ -201,8 +202,9 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
                 // printf("local WAIT_DIE DIE:%ld\n", txn->get_txn_id());
 				rc = Abort;
 			}
-		}
-        else{ //加锁成功
+		} else if(try_lock != 0 && retry_time > MAX_RETRY_TIME) {
+            rc = Abort;
+        } else{ //加锁成功
             rc = RCOK;
         }
 #endif
@@ -369,7 +371,7 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
                 txn->num_atomic_retry++;
                 if(txn->num_atomic_retry > max_num_atomic_retry) max_num_atomic_retry = txn->num_atomic_retry;
 				//sleep(1);
-					goto local_retry_lock;	
+				if (!simulation->is_done())	goto local_retry_lock;	
 			}
 		} else if(try_lock != 0 && retry_time > MAX_RETRY_TIME) {
             rc = Abort;

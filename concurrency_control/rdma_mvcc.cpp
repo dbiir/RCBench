@@ -30,7 +30,7 @@ void rdma_mvcc::init(row_t * row) {
 
 }
 
-void * rdma_mvcc::local_write_back(TxnManager * txnMng , uint64_t num){
+void  rdma_mvcc::local_write_back(TxnManager * txnMng , uint64_t num){
     row_t *temp_row = txnMng->txn->accesses[num]->orig_row;
 
      // 2.get all versions of the data item, find the oldest version, and replace it with new data to write
@@ -56,7 +56,7 @@ void * rdma_mvcc::local_write_back(TxnManager * txnMng , uint64_t num){
     temp_row->_tid_word = 0;//release lock
 }
 
-void * rdma_mvcc::remote_write_back(yield_func_t &yield,TxnManager * txnMng , uint64_t num , row_t * remote_row, uint64_t cor_id){
+void  rdma_mvcc::remote_write_back(yield_func_t &yield,TxnManager * txnMng , uint64_t num , row_t * remote_row, uint64_t cor_id){
     uint64_t off = txnMng->txn->accesses[num]->offset;
  	uint64_t loc = txnMng->txn->accesses[num]->location;
 #if USE_DBPAOR
@@ -65,7 +65,8 @@ void * rdma_mvcc::remote_write_back(yield_func_t &yield,TxnManager * txnMng , ui
     row_t *temp_row = txnMng->read_remote_row(yield, loc, off, cor_id);
 #endif
 	row_t * row = txnMng->txn->accesses[num]->orig_row;
-    assert(temp_row->get_primary_key() == row->get_primary_key());
+    if(temp_row->get_primary_key() != row->get_primary_key()) return;
+    // else if (temp_row->get_primary_key() != row->get_primary_key() ) assert(false);
 
     // 2.get all versions of the data item, find the oldest version, and replace it with new data to write
     int version_change;
@@ -102,7 +103,7 @@ void * rdma_mvcc::remote_write_back(yield_func_t &yield,TxnManager * txnMng , ui
     mem_allocator.free(temp_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 }
 
-void * rdma_mvcc::abort_release_local_lock(TxnManager * txnMng , uint64_t num){
+void rdma_mvcc::abort_release_local_lock(TxnManager * txnMng , uint64_t num){
         Transaction *txn = txnMng->txn;
         row_t * temp_row = txn->accesses[num]->orig_row;
         int version = txn->accesses[num]->old_version_num % HIS_CHAIN_NUM ;//version be locked
@@ -112,7 +113,7 @@ void * rdma_mvcc::abort_release_local_lock(TxnManager * txnMng , uint64_t num){
         
 }
 
-void * rdma_mvcc::abort_release_remote_lock(yield_func_t &yield, TxnManager * txnMng , uint64_t num, uint64_t cor_id){
+void rdma_mvcc::abort_release_remote_lock(yield_func_t &yield, TxnManager * txnMng , uint64_t num, uint64_t cor_id){
         Transaction *txn = txnMng->txn;
         row_t * temp_row = txn->accesses[num]->orig_row;
         int version = txn->accesses[num]->old_version_num % HIS_CHAIN_NUM ;//version be locked

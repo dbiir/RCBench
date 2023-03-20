@@ -267,7 +267,10 @@ void Rdma::init(){
 	string path = get_path();
 	read_ifconfig(path.c_str());
 
-	nic =  RNic::create(RNicInfo::query_dev_names().at(0)).value();
+	for (int i = 0; i < RNicInfo::query_dev_names().size(); i++) {
+		cout << "nic :" << RNicInfo::query_dev_names().at(i) << endl;
+	}
+	nic =  RNic::create(RNicInfo::query_dev_names().at(RDMA_USE_NIC_IDX)).value();
 
 	//as server
 	rdma_rm = Arc<RMem>(new RMem(rdma_buffer_size));

@@ -241,7 +241,10 @@ RC RDMA_Cicada::remote_read_or_write(yield_func_t &yield, Access * data, TxnMana
 			}
 			row_t * temp_row = txnMng->read_remote_row(yield,loc,off,cor_id);
 		#endif
-		assert(temp_row->get_primary_key() >= data->data->get_primary_key());
+		if (temp_row->get_primary_key() < data->data->get_primary_key()) {
+			mem_allocator.free(temp_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
+			return Abort;
+		}
 		for(int cnt = temp_row->version_cnt; cnt >= temp_row->version_cnt - HIS_CHAIN_NUM && cnt >= 0; cnt--) {
 			int i = cnt % HIS_CHAIN_NUM;
 			if (temp_row->cicada_version[i].state == Cicada_ABORTED) {
@@ -260,6 +263,7 @@ RC RDMA_Cicada::remote_read_or_write(yield_func_t &yield, Access * data, TxnMana
 				break;
 			} else {
 				INC_STATS(txnMng->get_thd_id(), cicada_case6_cnt, 1);
+				// printf("row %ld, type %d %d, wts %ld, txnts %ld \n", temp_row->get_primary_key(), temp_row->cicada_version[(temp_row->version_cnt) % HIS_CHAIN_NUM].state, temp_row->cicada_version[(temp_row->version_cnt) % HIS_CHAIN_NUM].key, txnMng->version_num[num], temp_row->cicada_version[(temp_row->version_cnt) % HIS_CHAIN_NUM].Wts);
 				rc = Abort;
 				break;
 			}
@@ -331,7 +335,7 @@ RDMA_Cicada::finish(yield_func_t &yield, RC rc , TxnManager * txnMng, uint64_t c
 						
 						INC_STATS(txnMng->get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 						INC_STATS(txnMng->get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-					} while (dbres1.first == 0);
+					} while (dbres1.first == 0 && !simulation->is_done());
 					txnMng->h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 					// RDMA_ASSERT(res_p == rdmaio::IOCode::Ok);
 				#else
@@ -399,7 +403,7 @@ RDMA_Cicada::finish(yield_func_t &yield, RC rc , TxnManager * txnMng, uint64_t c
 					
 					INC_STATS(txnMng->get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 					INC_STATS(txnMng->get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-				} while (dbres1.first == 0);
+				} while (dbres1.first == 0 && !simulation->is_done());
 				txnMng->h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 				// RDMA_ASSERT(res_p == rdmaio::IOCode::Ok);
 	#else

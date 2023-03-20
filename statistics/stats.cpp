@@ -644,18 +644,18 @@ void Stats_thd::print(FILE * outf, bool prog) {
           single_part_txn_run_time / BILLION, single_part_txn_avg_time / BILLION, txn_write_cnt,
           record_write_cnt, parts_touched, avg_parts_touched);
 
-//   fprintf(outf,
-//   ",local_lock_fail_abort =%ld"
-//   ",remote_lock_fail_abort=%ld"
-//   ",local_readset_validate_fail_abort=%ld"
-//   ",remote_readset_validate_fail_abort=%ld"
-//   ",local_writeset_validate_fail_abort=%ld"
-//   ",remote_writeset_validate_fail_abort=%ld"
-//   ",validate_lock_abort=%ld"
-//   ",local_try_lock_fail_abort=%ld"
-//   ",remote_try_lock_fail_abort=%ld"
-//   ",cnt_unequal_abort=%ld",
-//   local_lock_fail_abort,remote_lock_fail_abort,local_readset_validate_fail_abort,remote_readset_validate_fail_abort,local_writeset_validate_fail_abort,remote_writeset_validate_fail_abort,validate_lock_abort,local_try_lock_fail_abort,remote_try_lock_fail_abort,cnt_unequal_abort);
+  fprintf(outf,
+  ",local_lock_fail_abort =%ld"
+  ",remote_lock_fail_abort=%ld"
+  ",local_readset_validate_fail_abort=%ld"
+  ",remote_readset_validate_fail_abort=%ld"
+  ",local_writeset_validate_fail_abort=%ld"
+  ",remote_writeset_validate_fail_abort=%ld"
+  ",validate_lock_abort=%ld"
+  ",local_try_lock_fail_abort=%ld"
+  ",remote_try_lock_fail_abort=%ld"
+  ",cnt_unequal_abort=%ld",
+  local_lock_fail_abort,remote_lock_fail_abort,local_readset_validate_fail_abort,remote_readset_validate_fail_abort,local_writeset_validate_fail_abort,remote_writeset_validate_fail_abort,validate_lock_abort,local_try_lock_fail_abort,remote_try_lock_fail_abort,cnt_unequal_abort);
 
   fprintf(outf, //ywq
   ",valid_abort_cnt = %ld"

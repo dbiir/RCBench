@@ -99,7 +99,7 @@ retry_read:
 					INC_STATS(txn->get_thd_id(), worker_idle_time, endtime - starttime);
 					INC_STATS(txn->get_thd_id(), worker_waitcomp_time, endtime - starttime);
 				#endif
-					goto retry_read;
+					if (!simulation->is_done()) goto retry_read;
 					// printf("[leave waiting]current_txn:%ld, wait_time:%ld\n",txn->get_txn_id(),endtime-starttime);
 				}
 			} else {

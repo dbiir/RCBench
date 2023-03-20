@@ -57,7 +57,8 @@
 int row_t::get_row_size(int tuple_size){
 #if RDMA_ONE_SIDE == true
 	// int tuple_size = schema->get_tuple_size();
-	int size = sizeof(row_t) + tuple_size;
+	uint64_t write_size = (uint64_t)tuple_size < ROW_DEFAULT_SIZE ? tuple_size : ROW_DEFAULT_SIZE;
+	int size = sizeof(row_t) + write_size;
 #else
 	int size = sizeof(row_t);
 #endif
@@ -375,11 +376,12 @@ RC row_t::get_lock(access_t type, TxnManager * txn) {
 RC row_t::remote_copy_row(row_t* remote_row, TxnManager * txn, Access *access) {
   RC rc = RCOK;
   uint64_t init_time = get_sys_clock();
-  txn->cur_row = (row_t *) mem_allocator.alloc(row_t::get_row_size(remote_row->tuple_size));
+  uint64_t size = (uint64_t)remote_row->tuple_size < ROW_DEFAULT_SIZE ? row_t::get_row_size(remote_row->tuple_size) : row_t::get_row_size(ROW_DEFAULT_SIZE);
+  txn->cur_row = (row_t *) mem_allocator.alloc(size);
   INC_STATS(txn->get_thd_id(), trans_cur_row_init_time, get_sys_clock() - init_time);
   
   uint64_t copy_time = get_sys_clock();
-  memcpy((char*)txn->cur_row, (char*)remote_row, row_t::get_row_size(remote_row->tuple_size));
+  memcpy((char*)txn->cur_row, (char*)remote_row, size);
   access->data = txn->cur_row;
 //   printf("remote_copy_row.cpp:286】table_name = %s operate_size = %ld tuple_size = %ld sizeof(row_t)=%d\n",txn->cur_row->table_name,row_t::get_row_size(remote_row->tuple_size),txn->cur_row->tuple_size,sizeof(row_t));
   //access->orig_row = txn->cur_row;

@@ -464,7 +464,7 @@ RC TPCCTxnManager::send_remote_one_side_request(yield_func_t &yield, TPCCQuery *
 	// get the index of row to be operated
 	itemid_t * m_item;
 	m_item = tpcc_read_remote_index(query);
-
+	if (m_item == nullptr) return Abort;
     TPCCQuery* tpcc_query = (TPCCQuery*) query;
 	uint64_t w_id = tpcc_query->w_id;
     uint64_t part_id_w = wh_to_part(w_id);

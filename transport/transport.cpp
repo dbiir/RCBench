@@ -250,7 +250,6 @@ Socket * Transport::connect(uint64_t dest_id,uint64_t port_id) {
 void Transport::create_server(uint64_t port, uint64_t dest_node_id) {
 	RCtrl ctrl(port);
 	RecvManager<RDMA_ENTRY_NUM, RDMA_BUFFER_ITEM_SIZE> manager(ctrl);
-	//auto tport_man.nic = RNic::create(RNicInfo::query_dev_names().at(RDMA_USE_NIC_IDX)).value();
 	RDMA_ASSERT(ctrl.opened_nics.reg(0, tport_man.nic));
 	// RDMA_LOG(4) << g_node_id << " RDMA listens " << dest_node_id << " at " << port;
 
@@ -370,6 +369,10 @@ void Transport::init() {
 	pthread_mutex_init( latch, NULL );
 	latch_send = (pthread_mutex_t *)mem_allocator.alloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init( latch_send, NULL );
+	for (int i = 0; i < RNicInfo::query_dev_names().size(); i++) {
+		cout << "nic :" << RNicInfo::query_dev_names().at(i) << endl;
+	}
+	printf("Tport Init2  %d: %ld\n",g_node_id,_sock_cnt);
 	tport_man.nic = RNic::create(RNicInfo::query_dev_names().at(RDMA_USE_NIC_IDX)).value();
 	vector<std::thread> th_bind;
 	vector<std::thread> th_connect;
@@ -453,6 +456,10 @@ void Transport::init() {
 	pthread_mutex_init( latch, NULL );
 	latch_send = (pthread_mutex_t *)mem_allocator.alloc(sizeof(pthread_mutex_t));
 	pthread_mutex_init( latch_send, NULL );
+	for (int i = 0; i < RNicInfo::query_dev_names().size(); i++) {
+		cout << "nic :" << RNicInfo::query_dev_names().at(i) << endl;
+	}
+	printf("Tport Init2  %d: %ld\n",g_node_id,_sock_cnt);
 	tport_man.nic = RNic::create(RNicInfo::query_dev_names().at(RDMA_USE_NIC_IDX)).value();
 	vector<std::thread> th_bind;
 	vector<std::thread> th_connect;

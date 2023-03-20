@@ -373,7 +373,7 @@ void RDMA_2pl::finish(yield_func_t &yield,RC rc, TxnManager * txnMng,uint64_t co
 				
 				INC_STATS(txnMng->get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 				INC_STATS(txnMng->get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-			} while (dbres1.first == 0);
+			} while (dbres1.first == 0 && !simulation->is_done());
 			txnMng->h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 			// RDMA_ASSERT(res_p == rdmaio::IOCode::Ok);
         #else  

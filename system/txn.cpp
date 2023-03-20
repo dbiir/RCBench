@@ -1164,7 +1164,7 @@ void TxnManager::cleanup(yield_func_t &yield, RC rc, uint64_t cor_id) {
 				
 				INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 				INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-			} while (dbres1.first == 0);
+			} while (dbres1.first == 0 && !simulation->is_done());
 			h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 			// RDMA_ASSERT(res_p == rdmaio::IOCode::Ok);
 	#else
@@ -2110,7 +2110,7 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 			row_t * test_row = read_remote_row(yield,loc,m_item->offset,cor_id);
 			if(try_lock == 0) {
 				test_row->lock_owner = txn->txn_id;			
-				assert(write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), m_item->offset,(char*)test_row, cor_id) == true);
+				assert(write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size) , m_item->offset,(char*)test_row, cor_id) == true);
 			}
 			// assert(test_row->get_primary_key() == req->key);
 		#endif
@@ -2232,6 +2232,11 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 			}
 			test_row = read_remote_row(yield,loc,m_item->offset,cor_id);
 		#endif
+			if(test_row->get_primary_key() != req->key) {
+				mem_allocator.free(m_item, sizeof(itemid_t));
+				mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
+				return Abort;
+			}
 			// assert(test_row->get_primary_key() == req->key);
 			lock_type = test_row->lock_type;
 			if(lock_type == 0) {
@@ -2361,6 +2366,11 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 			try_lock = cas_remote_content(yield,loc,m_item->offset,0,tts,cor_id);
 			test_row = read_remote_row(yield,loc,m_item->offset,cor_id);
 		#endif
+			if(test_row->get_primary_key() != m_item->key) {
+				mem_allocator.free(m_item, sizeof(itemid_t));
+				mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
+				return Abort;
+			}
 			// assert(test_row->get_primary_key() == req->key);
 			retry_time += 1;
 			if(try_lock == 0) {
@@ -2438,6 +2448,11 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 		uint64_t* wid = nullptr;
 		row_t * remote_row = read_remote_row(yield,loc,m_item->offset,cor_id);
 		// assert(remote_row->get_primary_key() == req->key);
+		if(remote_row->get_primary_key() != m_item->key) {
+			mem_allocator.free(m_item, sizeof(itemid_t));
+			mem_allocator.free(remote_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
+			return Abort;
+		}
 		if(type == RD) {
 			if(ts < remote_row->wts){
 				rc = Abort;
@@ -2692,7 +2707,7 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 						INC_STATS(get_thd_id(), worker_idle_time, endtime - starttime);
 						INC_STATS(get_thd_id(), worker_waitcomp_time, endtime - starttime);
 					#endif
-						goto retry_read;
+						if (!simulation->is_done())goto retry_read;
 						// printf("[leave waiting]current_txn:%ld, wait_time:%ld\n",get_txn_id(),endtime-starttime);
 						// 
 					}
@@ -2785,7 +2800,11 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 			}
 			row_t * remote_row = read_remote_row(yield,loc,m_item->offset,cor_id);
 		#endif
-		// assert(remote_row->get_primary_key() == req->key);
+		if (remote_row->get_primary_key() != m_item->key) {
+			mem_allocator.free(m_item, sizeof(itemid_t));
+			mem_allocator.free(remote_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
+			return Abort;
+		}
 
 		if(type == RD || WORKLOAD == TPCC) {
 			if(remote_row->ucreads_len >= row_set_length - 1 ) {
@@ -3313,7 +3332,7 @@ row_t * TxnManager::cas_and_read_remote(yield_func_t &yield, uint64_t& try_lock,
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 		// INC_STATS(get_thd_id(), worker_waitcomp_cnt, 1);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-	} while (dbres1.first == 0);
+	} while (dbres1.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 	// RDMA_ASSERT(res_p == rdmaio::IOCode::Ok);
 #else
@@ -3424,7 +3443,7 @@ void TxnManager::batch_unlock_remote(yield_func_t &yield, uint64_t cor_id, int l
         uint64_t *local_buf = (uint64_t *)Rdma::get_row_client_memory(thd_id,count+i+1);            
         orig_lock_info.push_back(*local_buf);
     }
-    while(remote_need_cas.size()>0){
+    while(remote_need_cas.size()>0 && !simulation->is_done()){
         DBrequests dbreq(remote_need_cas.size());   
         dbreq.init(); 
         for(int i=0;i<remote_need_cas.size();i++){
@@ -3532,7 +3551,7 @@ void TxnManager::get_batch_read(yield_func_t &yield, BatchReadType rtype,int loc
 		
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-	} while (dbres1.first == 0);
+	} while (dbres1.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 	// RDMA_ASSERT(res_p == rdmaio::IOCode::Ok);
 #else
@@ -3611,7 +3630,7 @@ row_t * TxnManager::read_remote_row(yield_func_t &yield, uint64_t target_server,
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 		INC_STATS(get_thd_id(), worker_waitcomp_cnt, 1);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-	} while (res_p.first == 0);
+	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
     // RDMA_ASSERT(res_p == rdmaio::IOCode::Ok);
 	
@@ -3675,7 +3694,7 @@ row_t * TxnManager::read_remote_row(yield_func_t &yield, uint64_t target_server,
 		
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-	} while (res_p.first == 0);
+	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 #else
 	auto res_p = rc_qp[target_server][thd_id]->wait_one_comp();
@@ -3687,13 +3706,15 @@ row_t * TxnManager::read_remote_row(yield_func_t &yield, uint64_t target_server,
 #endif
 
     itemid_t* item = (itemid_t *)mem_allocator.alloc(sizeof(itemid_t));
-	assert(((IndexInfo*)test_buf)->key == key);
-
+	if (((IndexInfo*)test_buf)->key != key) {
+		return nullptr;
+	}
 	item->location = ((IndexInfo*)test_buf)->address;
 	item->type = ((IndexInfo*)test_buf)->type;
 	item->valid = ((IndexInfo*)test_buf)->valid;
 	item->offset = ((IndexInfo*)test_buf)->offset;
   	item->table_offset = ((IndexInfo*)test_buf)->table_offset;
+	item->key = ((IndexInfo*)test_buf)->key;
 
     return item;
 }
@@ -3736,7 +3757,7 @@ bool TxnManager::write_remote_row(yield_func_t &yield, uint64_t target_server,ui
 		
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-	} while (res_p.first == 0);
+	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 	// yield(h_thd->_routines[0]);
 #else
@@ -3795,7 +3816,7 @@ bool TxnManager::write_remote_index(yield_func_t &yield,uint64_t target_server,u
 		
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-	} while (res_p.first == 0);
+	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 #else
 	auto res_p = rc_qp[target_server][thd_id]->wait_one_comp();
@@ -3851,7 +3872,7 @@ uint64_t TxnManager::cas_remote_content(yield_func_t &yield, uint64_t target_ser
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 		INC_STATS(get_thd_id(), worker_waitcomp_cnt, 1);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-	} while (res_p.first == 0);
+	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 
 #else
@@ -3901,7 +3922,7 @@ uint64_t TxnManager::faa_remote_content(yield_func_t &yield, uint64_t target_ser
 		
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-	} while (res_p.first == 0);
+	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 
 #else
@@ -4032,7 +4053,7 @@ RdmaTxnTableNode * TxnManager::read_remote_timetable(yield_func_t &yield, uint64
 		
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-	} while (res_p.first == 0);
+	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 
 #else
@@ -4091,7 +4112,7 @@ char * TxnManager::read_remote_txntable(yield_func_t &yield, uint64_t target_ser
 		
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-	} while (res_p.first == 0);
+	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 
 #else
@@ -4282,7 +4303,7 @@ uint64_t TxnManager::faa_remote_content(yield_func_t &yield, uint64_t target_ser
 		
 		INC_STATS(get_thd_id(), worker_idle_time, waitcomp_time - yield_endtime);
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
-	} while (res_p.first == 0);
+	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
 
 #else
