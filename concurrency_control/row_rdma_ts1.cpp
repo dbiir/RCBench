@@ -32,8 +32,9 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 			uint64_t old_rts = temp_row->rts;
 			uint64_t new_rts = ts;			
 			uint64_t rts_offset = access->offset+sizeof(uint64_t)+sizeof(uint64_t)*CASCADING_LENGTH+sizeof(ts_t);
-			uint64_t cas_result = txn->cas_remote_content(access->location,rts_offset,old_rts,new_rts);
-			if(cas_result!=old_rts){ //cas fail, atomicity violated
+			uint64_t cas_result;
+			rc = txn->cas_remote_content(access->location,rts_offset,old_rts,new_rts,cas_result);
+			if(rc == Abort || cas_result!=old_rts){ //cas fail, atomicity violated
 				rc = Abort;
 				// #if DEBUG_PRINTF
 				// printf("[change rts failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
@@ -83,8 +84,9 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 		uint64_t new_mutx = txn->get_txn_id() + 1;
 		// uint64_t mutx_offset = access->offset+sizeof(uint64_t);
 		uint64_t mutx_offset = access->offset;
-		uint64_t cas_result = txn->cas_remote_content(access->location,mutx_offset,old_mutx,new_mutx);
-		if(cas_result!=old_mutx){ //cas fail, atomicity violated
+		uint64_t cas_result;
+		rc = txn->cas_remote_content(access->location,mutx_offset,old_mutx,new_mutx,cas_result);
+		if(rc == Abort || cas_result!=old_mutx){ //cas fail, atomicity violated
 			#if DEBUG_PRINTF
 			printf("[lock failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
 			#endif
@@ -136,7 +138,7 @@ RC Row_rdma_ts1::local_commit(yield_func_t &yield, TxnManager * txn, Access *acc
 
 	if (type == XP) {
 		//lock until success!
-    	assert(txn->loop_cas_remote(access->location,access->offset,0,txn->get_txn_id()+1) == true);//lock in loop
+    	assert(txn->loop_cas_remote(access->location,access->offset,0,txn->get_txn_id()+1) == RCOK);//lock in loop
 #if DEBUG_PRINTF
 		// printf("[本地写入前]事务号：%d，主键：%d，锁：%lu，tid：%lu,rts:%lu,wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
 #endif
@@ -152,7 +154,7 @@ RC Row_rdma_ts1::local_commit(yield_func_t &yield, TxnManager * txn, Access *acc
 		_row->mutx = 0;
 	} 
 	else if (type == WR) {
-		assert(txn->loop_cas_remote(access->location,access->offset,0,txn->get_txn_id()+1) == true);//lock in loop
+		assert(txn->loop_cas_remote(access->location,access->offset,0,txn->get_txn_id()+1) == RCOK);//lock in loop
 		int i = 0;
 		for (i = 0; i < CASCADING_LENGTH; i++) {
 			if (_row->tid[i] == txn->get_txn_id()) break;

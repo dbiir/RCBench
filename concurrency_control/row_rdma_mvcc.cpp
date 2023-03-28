@@ -52,8 +52,9 @@ RC Row_rdma_mvcc::access(TxnManager * txn, Access *access, access_t type) {
 		uint64_t old_rts = temp_row->rts[version];
 		uint64_t new_rts = txn->get_timestamp();
 		uint64_t rts_offset = access->offset + 2*sizeof(uint64_t) + HIS_CHAIN_NUM*sizeof(uint64_t) + version*sizeof(uint64_t);
-		uint64_t cas_result = txn->cas_remote_content(access->location,rts_offset,old_rts,new_rts);//lock
-		if(cas_result!=old_rts){ //CAS fail, atomicity violated
+		uint64_t cas_result;
+		rc = txn->cas_remote_content(access->location,rts_offset,old_rts,new_rts,cas_result);//lock
+		if(rc == Abort || cas_result!=old_rts){ //CAS fail, atomicity violated
 			// printf("local %ld rts update failed old %ld now %ld new %ld\n",temp_row->get_primary_key(), old_rts, cas_result, new_rts);
 			rc = Abort;
 			return rc;			
@@ -69,8 +70,8 @@ RC Row_rdma_mvcc::access(TxnManager * txn, Access *access, access_t type) {
     else if(type == WR){
         uint64_t lock = txn->get_txn_id()+1;
 		uint64_t try_lock = -1;
-		try_lock = txn->cas_remote_content(access->location,access->offset,0,lock);//lock
-		if(try_lock != 0){
+		rc = txn->cas_remote_content(access->location,access->offset,0,lock,try_lock);//lock
+		if(rc == Abort || try_lock != 0){
 			// printf("local %ld lock failed other %ld me %ld\n",_row->get_primary_key(), try_lock, lock);
 			rc = Abort;
 			return rc;

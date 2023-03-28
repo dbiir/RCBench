@@ -922,47 +922,47 @@ def ycsb_partitions_1():
 
 def ycsb_partitions():
     wl = 'YCSB'
-    nnodes = [10]
-    algos=['RDMA_TS1','RDMA_WOUND_WAIT2']
-    # algos=['RDMA_CICADA','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
-    # algos=['RDMA_MAAT','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    nnodes = [12]
+    # algos=['RDMA_NO_WAIT2']
+    # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    algos=['RDMA_WAIT_DIE2']
     # algos=['RDMA_TS1']
     # algos=['RDMA_NO_WAIT2']
     # load = [10000,12000]
     load = [20000]
     # nparts = [2]
-    nparts = [2,4,6,8,10]
+    nparts = [3,6,9,12]
     base_table_size= 1048576
     txn_write_perc = [1]
     tup_write_perc = [0.2]
     tcnt = [24]
     skew = [0.2]
-    rpq =  10
+    rpq =  12
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","REQ_PER_QUERY","PART_PER_TXN","SYNTH_TABLE_SIZE","TUP_WRITE_PERC","TXN_WRITE_PERC","ONLY_ONE_HOME","NO_PHYSICAL","COROUTINE_CNT","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT","STRICT_PPT"]
     exp = [[wl,n,algo,rpq,p,base_table_size*n,tup_wr_perc,txn_wr_perc,'true','true',8,ld,sk,thr,1] for thr,txn_wr_perc,tup_wr_perc,algo,sk,ld,n,p in itertools.product(tcnt,txn_write_perc,tup_write_perc,algos,skew,load,nnodes,nparts)]
     return fmt,exp
 
 def ycsb_partitions_h():
     wl = 'YCSB'
-    nnodes = [10]
+    nnodes = [12]
     # algos=['RDMA_MAAT','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
     # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
-    # algos=['RDMA_MAAT', 'RDMA_TS1']
+    # algos=['RDMA_MVCC']
     algos=['RDMA_WAIT_DIE2']
-    # algos=['RDMA_NO_WAIT2','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    # algos=['RDMA_WOUND_WAIT2']
     # load = [10000,12000]
     load = [10000]
     # nparts = [3]
-    nparts = [2,4,6,8,10]
+    nparts = [3,6,9,12]
     # nparts = [3,6,9,12,15]
     base_table_size= 1048576
     txn_write_perc = [1]
     tup_write_perc = [0.2]
     tcnt = [24]
     skew = [0.8]
-    rpq =  10
+    rpq =  12
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","REQ_PER_QUERY","PART_PER_TXN","SYNTH_TABLE_SIZE","TUP_WRITE_PERC","TXN_WRITE_PERC","ONLY_ONE_HOME","COROUTINE_CNT","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT","STRICT_PPT"]
-    exp = [[wl,n,algo,rpq,p,base_table_size*n,tup_wr_perc,txn_wr_perc,'true',8,ld,sk,thr,1] for thr,txn_wr_perc,tup_wr_perc,algo,sk,ld,n,p in itertools.product(tcnt,txn_write_perc,tup_write_perc,algos,skew,load,nnodes,nparts)]
+    exp = [[wl,n,algo,rpq,p,base_table_size*n,tup_wr_perc,txn_wr_perc,'true',4,ld,sk,thr,1] for thr,txn_wr_perc,tup_wr_perc,algo,sk,ld,n,p in itertools.product(tcnt,txn_write_perc,tup_write_perc,algos,skew,load,nnodes,nparts)]
     return fmt,exp
 
 def ycsb_partitions_8():

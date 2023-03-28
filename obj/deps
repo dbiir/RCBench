@@ -1184,7 +1184,9 @@ obj/ycsb_query.o: benchmarks/ycsb_query.cpp system/query.h system/global.h \
  concurrency_control/rdma_maat.h storage/row.h \
  concurrency_control/row_rdma_cicada.h concurrency_control/maat.h \
  concurrency_control/row_rdma_maat.h transport/message.h system/logger.h \
- system/worker_thread.h system/thread.h system/routine.h storage/table.h \
+ system/worker_thread.h system/thread.h system/routine.h \
+ storage/index_hash.h storage/index_base.h storage/index_btree.h \
+ storage/index_rdma.h storage/index_hash.h storage/table.h \
  storage/catalog.h transport/message.h
 obj/tpcc_wl.o: benchmarks/tpcc_wl.cpp system/global.h config.h \
  statistics/stats.h statistics/../system/global.h \
@@ -2971,9 +2973,9 @@ obj/ycsb_wl.o: benchmarks/ycsb_wl.cpp system/global.h config.h \
  concurrency_control/row_rdma_cicada.h concurrency_control/maat.h \
  concurrency_control/row_rdma_maat.h transport/message.h system/logger.h \
  system/array.h system/worker_thread.h system/thread.h system/routine.h \
- system/thread.h storage/table.h storage/catalog.h storage/index_hash.h \
- storage/index_base.h storage/index_btree.h storage/index_rdma.h \
- storage/index_hash.h storage/catalog.h system/manager.h \
+ storage/index_hash.h storage/index_base.h storage/index_btree.h \
+ storage/index_rdma.h storage/index_hash.h system/thread.h \
+ storage/table.h storage/catalog.h storage/catalog.h system/manager.h \
  concurrency_control/row_lock.h concurrency_control/row_ts.h \
  concurrency_control/row_mvcc.h system/mem_alloc.h system/query.h
 obj/tpcc_query.o: benchmarks/tpcc_query.cpp system/query.h system/global.h \
@@ -4161,9 +4163,9 @@ obj/ycsb_txn.o: benchmarks/ycsb_txn.cpp system/global.h config.h \
  concurrency_control/row_rdma_cicada.h concurrency_control/maat.h \
  concurrency_control/row_rdma_maat.h transport/message.h system/logger.h \
  system/array.h system/worker_thread.h system/thread.h system/routine.h \
- benchmarks/ycsb_query.h system/query.h system/thread.h storage/table.h \
- storage/catalog.h storage/index_hash.h storage/index_base.h \
- storage/index_btree.h storage/index_rdma.h storage/index_hash.h \
+ storage/index_hash.h storage/index_base.h storage/index_btree.h \
+ storage/index_rdma.h storage/index_hash.h benchmarks/ycsb_query.h \
+ system/query.h system/thread.h storage/table.h storage/catalog.h \
  transport/rdma.h transport/nn.hpp /home/u2021000884/include/nanomsg/nn.h \
  /home/u2021000884/include/nanomsg/tcp.h storage/catalog.h \
  system/manager.h concurrency_control/row_lock.h \
@@ -41912,12 +41914,13 @@ obj/message.o: transport/message.cpp system/mem_alloc.h system/global.h \
  concurrency_control/row_rdma_cicada.h concurrency_control/maat.h \
  concurrency_control/row_rdma_maat.h transport/message.h system/logger.h \
  system/worker_thread.h system/thread.h system/routine.h \
- benchmarks/tpcc_query.h benchmarks/tpcc.h benchmarks/pps_query.h \
- benchmarks/pps.h transport/message.h concurrency_control/maat.h \
- concurrency_control/dta.h concurrency_control/../storage/row.h \
- benchmarks/da.h benchmarks/creator.h benchmarks/generic.h \
- benchmarks/da_query.h benchmarks/da.h concurrency_control/wkdb.h \
- concurrency_control/tictoc.h
+ storage/index_hash.h storage/index_base.h storage/index_btree.h \
+ storage/index_rdma.h storage/index_hash.h benchmarks/tpcc_query.h \
+ benchmarks/tpcc.h benchmarks/pps_query.h benchmarks/pps.h \
+ transport/message.h concurrency_control/maat.h concurrency_control/dta.h \
+ concurrency_control/../storage/row.h benchmarks/da.h \
+ benchmarks/creator.h benchmarks/generic.h benchmarks/da_query.h \
+ benchmarks/da.h concurrency_control/wkdb.h concurrency_control/tictoc.h
 obj/msg_thread.o: transport/msg_thread.cpp transport/msg_thread.h \
  system/global.h config.h statistics/stats.h \
  statistics/../system/global.h statistics/stats_array.h system/pool.h \
@@ -47509,7 +47512,9 @@ obj/io_thread.o: system/io_thread.cpp system/global.h config.h \
  concurrency_control/rdma_maat.h storage/row.h \
  concurrency_control/row_rdma_cicada.h concurrency_control/maat.h \
  concurrency_control/row_rdma_maat.h transport/message.h \
- system/worker_thread.h benchmarks/ycsb.h system/wl.h system/txn.h
+ system/worker_thread.h benchmarks/ycsb.h system/wl.h system/txn.h \
+ storage/index_hash.h storage/index_base.h storage/index_btree.h \
+ storage/index_rdma.h storage/index_hash.h
 obj/txn.o: system/txn.cpp system/helper.h system/global.h config.h \
  statistics/stats.h statistics/../system/global.h \
  statistics/stats_array.h system/pool.h \
@@ -49758,7 +49763,9 @@ obj/txn_table.o: system/txn_table.cpp system/txn_table.h system/global.h \
  /home/u2021000884/include/boost/type_traits/has_trivial_move_assign.hpp \
  /home/u2021000884/include/boost/type_traits/has_nothrow_assign.hpp \
  /home/u2021000884/include/boost/circular_buffer/space_optimized.hpp \
- benchmarks/ycsb.h benchmarks/ycsb_query.h
+ benchmarks/ycsb.h storage/index_hash.h storage/index_base.h \
+ storage/index_btree.h storage/index_rdma.h storage/index_hash.h \
+ benchmarks/ycsb_query.h
 obj/abort_queue.o: system/abort_queue.cpp system/mem_alloc.h system/global.h \
  config.h statistics/stats.h statistics/../system/global.h \
  statistics/stats_array.h system/pool.h system/helper.h \
@@ -52437,9 +52444,11 @@ obj/pool.o: system/pool.cpp system/pool.h system/global.h config.h \
  system/logger.h system/array.h system/worker_thread.h system/thread.h \
  system/routine.h system/wl.h benchmarks/ycsb_query.h system/query.h \
  system/helper.h system/array.h benchmarks/ycsb.h system/wl.h \
- system/txn.h benchmarks/tpcc_query.h benchmarks/pps_query.h \
- benchmarks/da.h benchmarks/creator.h benchmarks/generic.h \
- benchmarks/da_query.h benchmarks/da.h system/query.h system/msg_queue.h \
+ system/txn.h storage/index_hash.h storage/index_base.h \
+ storage/index_btree.h storage/index_rdma.h storage/index_hash.h \
+ benchmarks/tpcc_query.h benchmarks/pps_query.h benchmarks/da.h \
+ benchmarks/creator.h benchmarks/generic.h benchmarks/da_query.h \
+ benchmarks/da.h system/query.h system/msg_queue.h \
  system/lock_free_queue.h
 obj/work_queue.o: system/work_queue.cpp system/work_queue.h system/global.h \
  config.h statistics/stats.h statistics/../system/global.h \
@@ -55144,13 +55153,14 @@ obj/main.o: system/main.cpp system/abort_thread.h system/global.h config.h \
  /home/u2021000884/include/boost/type_traits/has_trivial_move_assign.hpp \
  /home/u2021000884/include/boost/type_traits/has_nothrow_assign.hpp \
  /home/u2021000884/include/boost/circular_buffer/space_optimized.hpp \
- system/worker_thread.h benchmarks/ycsb.h benchmarks/ycsb_query.h \
- benchmarks/da.h benchmarks/creator.h benchmarks/generic.h \
- system/rdma_calvin.h concurrency_control/rdma_cicada.h \
- concurrency_control/cicada.h concurrency_control/ssi.h \
- concurrency_control/wsi.h concurrency_control/focc.h \
- concurrency_control/bocc.h concurrency_control/wkdb.h \
- concurrency_control/tictoc.h transport/rdma.h
+ system/worker_thread.h benchmarks/ycsb.h storage/index_hash.h \
+ storage/index_base.h storage/index_btree.h storage/index_rdma.h \
+ storage/index_hash.h benchmarks/ycsb_query.h benchmarks/da.h \
+ benchmarks/creator.h benchmarks/generic.h system/rdma_calvin.h \
+ concurrency_control/rdma_cicada.h concurrency_control/cicada.h \
+ concurrency_control/ssi.h concurrency_control/wsi.h \
+ concurrency_control/focc.h concurrency_control/bocc.h \
+ concurrency_control/wkdb.h concurrency_control/tictoc.h transport/rdma.h
 obj/parser.o: system/parser.cpp system/global.h config.h statistics/stats.h \
  statistics/../system/global.h statistics/stats_array.h system/pool.h \
  system/helper.h /home/u2021000884/include/boost/lockfree/queue.hpp \

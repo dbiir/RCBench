@@ -394,7 +394,7 @@ void TPCCTxnManager::copy_remote_items(TPCCQueryMessage * msg) {
 		msg->items.add(req);
 	}
 }
-itemid_t* TPCCTxnManager::tpcc_read_remote_index(TPCCQuery * query) {
+RC TPCCTxnManager::tpcc_read_remote_index(yield_func_t &yield, TPCCQuery * query, itemid_t** item,uint64_t cor_id) {
     TPCCQuery* tpcc_query = (TPCCQuery*) query;
 	uint64_t w_id = tpcc_query->w_id;
 	uint64_t d_id = tpcc_query->d_id;
@@ -454,17 +454,17 @@ itemid_t* TPCCTxnManager::tpcc_read_remote_index(TPCCQuery * query) {
     
 	assert(loc != g_node_id);
    // printf("【tpcc.cpp:451】read index key = %ld \n",key);
-    itemid_t *item = read_remote_index(loc,remote_offset,key);
+    RC rc = read_remote_index(yield,loc,remote_offset,key,item,cor_id);
 
-	return item;
+	return rc;
 }
 
 RC TPCCTxnManager::send_remote_one_side_request(yield_func_t &yield, TPCCQuery * query,row_t *& row_local, uint64_t cor_id){
     RC rc = RCOK;
 	// get the index of row to be operated
 	itemid_t * m_item;
-	m_item = tpcc_read_remote_index(query);
-	if (m_item == nullptr) return Abort;
+	rc = tpcc_read_remote_index(yield,query,&m_item,cor_id);
+	if (rc == Abort || m_item == nullptr) return Abort;
     TPCCQuery* tpcc_query = (TPCCQuery*) query;
 	uint64_t w_id = tpcc_query->w_id;
     uint64_t part_id_w = wh_to_part(w_id);

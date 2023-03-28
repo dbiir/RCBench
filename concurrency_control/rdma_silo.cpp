@@ -114,7 +114,9 @@ RC RDMA_silo::validate_rdma_silo(yield_func_t &yield, TxnManager * txnMng, uint6
                 uint64_t off = txn->accesses[ txnMng->write_set[i] ]->offset;
                 uint64_t loc = txn->accesses[ txnMng->write_set[i] ]->location;
                 uint64_t lock = txnMng->get_txn_id();
-				if(txnMng->cas_remote_content(yield,loc,off,0,lock,cor_id) != 0){//remote lock fail
+				uint64_t result;
+				rc = txnMng->cas_remote_content(yield,loc,off,0,lock,result,cor_id);
+				if(rc == Abort || result!=0){//remote lock fail
                     INC_STATS(txnMng->get_thd_id(), remote_lock_fail_abort, 1); //12%
 					INC_STATS(txnMng->get_thd_id(), valid_abort_cnt, 1);
 					rc = Abort;
@@ -221,10 +223,11 @@ bool RDMA_silo::validate_rw_remote(yield_func_t &yield, TxnManager * txn , uint6
     uint64_t target_server = txn->txn->accesses[num]->location;
     uint64_t remote_offset = txn->txn->accesses[num]->offset;
 
-    row_t *temp_row = txn->read_remote_row(yield,target_server,remote_offset,cor_id);
+    row_t *temp_row;
+	RC rc = txn->read_remote_row(yield,target_server,remote_offset,&temp_row,cor_id);
 
 //check whether it was changed by other transaction
-	if(temp_row->_tid_word != lock && temp_row->_tid_word != 0){
+	if(rc == Abort || (temp_row->_tid_word != lock && temp_row->_tid_word != 0)){
 		succ = false;
 		INC_STATS(txn->get_thd_id(), validate_lock_abort, 1);
 	}
@@ -301,7 +304,8 @@ RDMA_silo::finish(yield_func_t &yield, RC rc , TxnManager * txnMng, uint64_t cor
 			//remote(release lock)
 				remote_access[loc].push_back(num);
 #if USE_DBPAOR == false
-                uint64_t try_lock = txnMng->cas_remote_content(yield,loc,remote_offset,lock,0,cor_id);
+                uint64_t try_lock;
+				rc = txnMng->cas_remote_content(yield,loc,remote_offset,lock,0,try_lock,cor_id);
                 // assert(try_lock == lock);
 #endif
 			}
@@ -374,7 +378,8 @@ RDMA_silo::finish(yield_func_t &yield, RC rc , TxnManager * txnMng, uint64_t cor
 #if USE_DBPAOR == false
 				Access * access = txn->accesses[ num ];
 				remote_commit_write(yield,txnMng,num,access->data,time,cor_id);
-                uint64_t try_lock = txnMng->cas_remote_content(yield,loc,remote_offset,lock,0,cor_id);
+                uint64_t try_lock;
+				rc = txnMng->cas_remote_content(yield,loc,remote_offset,lock,0,try_lock,cor_id);
                 // assert(try_lock == lock);
 #endif
 			}

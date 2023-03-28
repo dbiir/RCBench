@@ -62,7 +62,9 @@ void  rdma_mvcc::remote_write_back(yield_func_t &yield,TxnManager * txnMng , uin
 #if USE_DBPAOR
     row_t *temp_row = remote_row;
 #else
-    row_t *temp_row = txnMng->read_remote_row(yield, loc, off, cor_id);
+    row_t *temp_row;
+    RC rc = txnMng->read_remote_row(yield, loc, off, &temp_row,cor_id);
+    if (rc == Abort) return;
 #endif
 	row_t * row = txnMng->txn->accesses[num]->orig_row;
     if(temp_row->get_primary_key() != row->get_primary_key()) return;
@@ -104,32 +106,32 @@ void  rdma_mvcc::remote_write_back(yield_func_t &yield,TxnManager * txnMng , uin
 }
 
 void rdma_mvcc::abort_release_local_lock(TxnManager * txnMng , uint64_t num){
-        Transaction *txn = txnMng->txn;
-        row_t * temp_row = txn->accesses[num]->orig_row;
-        int version = txn->accesses[num]->old_version_num % HIS_CHAIN_NUM ;//version be locked
-        //int version = temp_row->version_num % HIS_CHAIN_NUM;
-        // printf("local %ld write abort %ld\n",temp_row->get_primary_key(),temp_row->txn_id[version]);
-        temp_row->txn_id[version] = 0;
+    Transaction *txn = txnMng->txn;
+    row_t * temp_row = txn->accesses[num]->orig_row;
+    int version = txn->accesses[num]->old_version_num % HIS_CHAIN_NUM ;//version be locked
+    //int version = temp_row->version_num % HIS_CHAIN_NUM;
+    // printf("local %ld write abort %ld\n",temp_row->get_primary_key(),temp_row->txn_id[version]);
+    temp_row->txn_id[version] = 0;
         
 }
 
 void rdma_mvcc::abort_release_remote_lock(yield_func_t &yield, TxnManager * txnMng , uint64_t num, uint64_t cor_id){
-        Transaction *txn = txnMng->txn;
-        row_t * temp_row = txn->accesses[num]->orig_row;
-        int version = txn->accesses[num]->old_version_num % HIS_CHAIN_NUM ;//version be locked
-        //int version = temp_row->version_num % HIS_CHAIN_NUM;
-        // printf("remote %ld write abort %ld\n",temp_row->get_primary_key(),temp_row->txn_id[version]);
-        temp_row->txn_id[version] = 0;
+    Transaction *txn = txnMng->txn;
+    row_t * temp_row = txn->accesses[num]->orig_row;
+    int version = txn->accesses[num]->old_version_num % HIS_CHAIN_NUM ;//version be locked
+    //int version = temp_row->version_num % HIS_CHAIN_NUM;
+    // printf("remote %ld write abort %ld\n",temp_row->get_primary_key(),temp_row->txn_id[version]);
+    temp_row->txn_id[version] = 0;
 
-        uint64_t off = txn->accesses[num]->offset;
-        uint64_t loc = txn->accesses[num]->location;
-        uint64_t thd_id = txnMng->get_thd_id();
-        uint64_t lock = txnMng->get_txn_id() + 1;
-        uint64_t operate_size = row_t::get_row_size(temp_row->tuple_size);
+    uint64_t off = txn->accesses[num]->offset;
+    uint64_t loc = txn->accesses[num]->location;
+    uint64_t thd_id = txnMng->get_thd_id();
+    uint64_t lock = txnMng->get_txn_id() + 1;
+    uint64_t operate_size = row_t::get_row_size(temp_row->tuple_size);
 
-        // char *test_buf = Rdma::get_row_client_memory(thd_id);
-        // memcpy(test_buf, (char*)temp_row , operate_size);
-        assert(txnMng->write_remote_row(yield,loc,operate_size,off,(char*)temp_row,cor_id) == true);
+    // char *test_buf = Rdma::get_row_client_memory(thd_id);
+    // memcpy(test_buf, (char*)temp_row , operate_size);
+    txnMng->write_remote_row(yield,loc,operate_size,off,(char*)temp_row,cor_id);
 }
 
 RC rdma_mvcc::finish(yield_func_t &yield, RC rc,TxnManager * txnMng, uint64_t cor_id){
@@ -237,11 +239,11 @@ RC rdma_mvcc::finish(yield_func_t &yield, RC rc,TxnManager * txnMng, uint64_t co
                 }
             }
             else{ //local
-                assert(txnMng->loop_cas_remote(loc,remote_offset,0,lock_num) == true);
+                assert(txnMng->loop_cas_remote(loc,remote_offset,0,lock_num) == RCOK);
             }
         #else
            //lock in loop
-           assert(txnMng->loop_cas_remote(yield,loc,remote_offset,0,lock_num,cor_id) == true);
+           assert(txnMng->loop_cas_remote(yield,loc,remote_offset,0,lock_num,cor_id) == RCOK);
         #endif
 
            if(txn->accesses[num]->location == g_node_id){//local

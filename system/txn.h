@@ -223,48 +223,35 @@ public:
 	if (CC_ALG == RDMA_SILO || CC_ALG == RDMA_MVCC || CC_ALG == RDMA_NO_WAIT || CC_ALG == RDMA_NO_WAIT2 || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == RDMA_MAAT || CC_ALG ==RDMA_TS1 ||CC_ALG ==RDMA_TS || CC_ALG == RDMA_CICADA || CC_ALG == RDMA_CNULL || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_DSLR_NO_WAIT || CC_ALG == RDMA_MOCC) return true;
 	else return false;
 	}
-
-    uint64_t get_part_num(uint64_t num,uint64_t part);
+	uint64_t get_part_num(uint64_t num,uint64_t part);
 	RC get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, itemid_t *m_item, row_t *& row_local, uint64_t cor_id);
-    row_t * read_remote_row(uint64_t target_server,uint64_t remote_offset);
-    itemid_t * read_remote_index(uint64_t target_server,uint64_t remote_offset,uint64_t key);
-// #if CC_ALG == RDMA_MAAT
-    RdmaTxnTableNode * read_remote_timetable(uint64_t target_server,uint64_t remote_offset);
-// #endif
-
-    bool write_remote_row(uint64_t target_server,uint64_t operate_size,uint64_t remote_offset,char *write_content);
-    bool write_remote_index(uint64_t target_server,uint64_t operate_size,uint64_t remote_offset,char *write_content);
-    bool write_unlock_remote_content(uint64_t target_server,uint64_t operate_size,uint64_t remote_offset,char *local_buf);//TODO
-
     bool get_version(row_t * temp_row,uint64_t * change_num,Transaction *txn);
-    uint64_t cas_remote_content(uint64_t target_server,uint64_t remote_offset,uint64_t old_value,uint64_t new_value );
-	uint64_t faa_remote_content(yield_func_t &yield, uint64_t target_server,uint64_t remote_offset, uint64_t cor_id);
-     bool loop_cas_remote(uint64_t target_server,uint64_t remote_offset,uint64_t old_value,uint64_t new_value);
     RC preserve_access(row_t *&row_local,itemid_t* m_item,row_t *test_row,access_t type,uint64_t key,uint64_t loc,uint64_t *wid = NULL);
+
+	// RDMA one-sided primitives
+	RC read_remote_row(uint64_t target_server,uint64_t remote_offset, row_t **test_row);
+	RC cas_remote_content(uint64_t target_server,uint64_t remote_offset,uint64_t old_value,uint64_t new_value,uint64_t &result);
+	RC loop_cas_remote(uint64_t target_server,uint64_t remote_offset,uint64_t old_value,uint64_t new_value);
+	RC write_remote_row(uint64_t target_server,uint64_t operate_size,uint64_t remote_offset,char *write_content);
+	//***********coroutine**********//
+	RC read_remote_row(yield_func_t &yield, uint64_t target_server, uint64_t remote_offset, row_t ** row, uint64_t cor_id);
+    RC read_remote_index(yield_func_t &yield, uint64_t target_server, uint64_t remote_offset, uint64_t key, itemid_t ** item,uint64_t cor_id);
+    RC read_remote_timetable(yield_func_t &yield,uint64_t target_server,uint64_t remote_offset, RdmaTxnTableNode ** node, uint64_t cor_id);
+	RC read_remote_txntable(yield_func_t &yield,uint64_t target_server,uint64_t remote_offset, char** buff, uint64_t cor_id);
+    RC write_remote_row(yield_func_t &yield, uint64_t target_server, uint64_t operate_size, uint64_t remote_offset, char *local_buf, uint64_t cor_id);
+    RC write_remote_index(yield_func_t &yield,uint64_t target_server,uint64_t operate_size,uint64_t remote_offset,char *write_content, uint64_t cor_id);
+    RC cas_remote_content(yield_func_t &yield, uint64_t target_server, uint64_t remote_offset, uint64_t old_value, uint64_t new_value, uint64_t & result, uint64_t cor_id);
+    RC faa_remote_content(yield_func_t &yield, uint64_t target_server,uint64_t remote_offset, uint64_t add, uint64_t & result, uint64_t cor_id);
+	RC faa_remote_content(yield_func_t &yield, uint64_t target_server,uint64_t remote_offset, uint64_t & result, uint64_t cor_id);
+    RC loop_cas_remote(yield_func_t &yield,uint64_t target_server,uint64_t remote_offset,uint64_t old_value,uint64_t new_value, uint64_t cor_id);
 #if USE_DBPAOR == true
 	void batch_unlock_remote(yield_func_t &yield, uint64_t cor_id, int loc, RC rc, TxnManager * txnMng , vector<vector<uint64_t>> remote_index_origin,ts_t time = 0, vector<vector<uint64_t>> remote_num = {{0}});
-	row_t * cas_and_read_remote(yield_func_t &yield, uint64_t& try_lock, uint64_t target_server, uint64_t cas_offset, uint64_t read_offset, uint64_t compare, uint64_t swap, uint64_t cor_id);
+	RC cas_and_read_remote(yield_func_t &yield, uint64_t& try_lock, uint64_t target_server, uint64_t cas_offset, uint64_t read_offset, uint64_t compare, uint64_t swap, row_t ** test_row, uint64_t cor_id);
 #endif
 #if BATCH_INDEX_AND_READ
     void batch_read(yield_func_t &yield, BatchReadType rtype,int loc, vector<vector<uint64_t>> remote_index_origin, uint64_t cor_id);
 	void get_batch_read(yield_func_t &yield, BatchReadType rtype,int loc, vector<vector<uint64_t>> remote_index_origin, uint64_t cor_id);
 #endif
-//***********coroutine**********//
-	row_t * read_remote_row(yield_func_t &yield, uint64_t target_server, uint64_t remote_offset, uint64_t cor_id);
-	// row_t * read_remote_row(yield_func_t &yield, uint64_t target_server, uint64_t remote_offset, uint64_t cor_id);
-    itemid_t * read_remote_index(yield_func_t &yield, uint64_t target_server, uint64_t remote_offset, uint64_t key, uint64_t cor_id);
-// #if CC_ALG == RDMA_MAAT
-    RdmaTxnTableNode * read_remote_timetable(yield_func_t &yield,uint64_t target_server,uint64_t remote_offset, uint64_t cor_id);
-	char * read_remote_txntable(yield_func_t &yield,uint64_t target_server,uint64_t remote_offset, uint64_t cor_id);
-// #endif
-
-    bool write_remote_row(yield_func_t &yield, uint64_t target_server, uint64_t operate_size, uint64_t remote_offset, char *local_buf, uint64_t cor_id);
-    bool write_remote_index(yield_func_t &yield,uint64_t target_server,uint64_t operate_size,uint64_t remote_offset,char *write_content, uint64_t cor_id);
-
-    uint64_t cas_remote_content(yield_func_t &yield, uint64_t target_server, uint64_t remote_offset, uint64_t old_value, uint64_t new_value, uint64_t cor_id);
-    uint64_t faa_remote_content(yield_func_t &yield, uint64_t target_server,uint64_t remote_offset, uint64_t add,uint64_t cor_id);
-    bool loop_cas_remote(yield_func_t &yield,uint64_t target_server,uint64_t remote_offset,uint64_t old_value,uint64_t new_value, uint64_t cor_id);
-
 
 	bool isRecon() {
 		assert(CC_ALG == CALVIN || CC_ALG == RDMA_CALVIN || !recon);

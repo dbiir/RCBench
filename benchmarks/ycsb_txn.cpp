@@ -234,7 +234,7 @@ void YCSBTxnManager::ycsb_batch_read(yield_func_t &yield,BatchReadType rtype, ui
  }
 #endif
 
-itemid_t* YCSBTxnManager::ycsb_read_remote_index(yield_func_t &yield, ycsb_request * req, uint64_t cor_id) {
+RC YCSBTxnManager::ycsb_read_remote_index(yield_func_t &yield, ycsb_request * req, itemid_t** item, uint64_t cor_id) {
 	uint64_t part_id = _wl->key_to_part( req->key );
   	uint64_t loc = GET_NODE_ID(part_id);
 	// printf("loc:%d and g_node_id:%d\n", loc, g_node_id);
@@ -246,26 +246,25 @@ itemid_t* YCSBTxnManager::ycsb_read_remote_index(yield_func_t &yield, ycsb_reque
 	uint64_t index_key = req->key / g_node_cnt;
 	uint64_t index_addr = (index_key) * sizeof(IndexInfo);
 	uint64_t index_size = sizeof(IndexInfo);
-
-    itemid_t* item = read_remote_index(yield, loc, index_addr,req->key, cor_id);
-	return item;
+	RC rc = RCOK;
+	rc = read_remote_index(yield, loc, index_addr,req->key, item,cor_id);
+	return rc;
 }
 
 RC YCSBTxnManager::send_remote_one_side_request(yield_func_t &yield, ycsb_request * req, row_t *& row_local, uint64_t cor_id) {
 	// get the index of row to be operated
-	
-	itemid_t * m_item;
+	RC rc = RCOK;
+	itemid_t * m_item = nullptr;
 #if BATCH_INDEX_AND_READ
 	m_item = reqId_index.find(next_record_id)->second;
 #else
-    m_item = ycsb_read_remote_index(yield, req, cor_id);
+    rc = ycsb_read_remote_index(yield, req, &m_item, cor_id);
 #endif
-	if (m_item == nullptr) return Abort;
+	if (rc == Abort || m_item == nullptr) return Abort;
 	uint64_t part_id = _wl->key_to_part( req->key );
     uint64_t loc = GET_NODE_ID(part_id);
 	assert(loc != g_node_id);
     
-    RC rc = RCOK;
     uint64_t version = 0;
 
 	rc = get_remote_row(yield, req->acctype, loc, m_item, row_local, cor_id);

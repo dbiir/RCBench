@@ -68,9 +68,9 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
     uint64_t thd_id = txn->get_thd_id();
 
     uint64_t try_lock = -1;
-    try_lock = txn->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,lock_info,new_lock_info,cor_id);
+    rc = txn->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,lock_info,new_lock_info,try_lock,cor_id);
 
-    if(try_lock != lock_info){ //如果CAS失败，原子性被破坏	
+    if(rc == Abort || try_lock != lock_info){ //如果CAS失败，原子性被破坏	
     #if DEBUG_PRINTF
                 printf("---atomic_retry_lock\n");
     #endif 
@@ -95,9 +95,9 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
     //RDMA CAS，不用本地CAS
     uint64_t loc = g_node_id;
     uint64_t try_lock = -1;
-    try_lock = txn->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,1,cor_id);
+    rc = txn->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,1,try_lock,cor_id);
 
-    if(try_lock != 0) rc = Abort; //加锁冲突，Abort	
+    if(rc == Abort || try_lock != 0) rc = Abort; //加锁冲突，Abort	
     else{   //加锁成功
     #if DEBUG_PRINTF
         printf("---线程号：%lu, 本地加锁成功，锁位置: %u; %p , 事务号: %lu, 原lock_info: 0, new_lock_info: 1\n", txn->get_thd_id(), g_node_id, &row->_tid_word, txn->get_txn_id());
@@ -116,8 +116,8 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
         uint64_t thd_id = txn->get_thd_id();
 		auto mr = client_rm_handler->get_reg_attr().value();
         uint64_t tts = txn->get_timestamp();
-        try_lock = txn->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,txn->get_txn_id(),cor_id);
-        if(try_lock != 0) {
+        rc = txn->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,txn->get_txn_id(),try_lock,cor_id);
+        if(rc == Abort || try_lock != 0) {
             rc = Abort;
             return rc;
         }
@@ -178,7 +178,8 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
         uint64_t thd_id = txn->get_thd_id();
 		auto mr = client_rm_handler->get_reg_attr().value();
         uint64_t tts = txn->get_timestamp();
-        try_lock = txn->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,tts,cor_id);
+        rc = txn->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,tts,try_lock,cor_id);
+        if (rc == Abort) return rc;
         if(try_lock == 0) {
             _row->lock_owner = txn->get_txn_id();
             rc = RCOK;
@@ -220,8 +221,8 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
 		bool canwait = true;
 		bool canwound = true;
         retry_time++;
-        try_lock = txn->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,txn->get_txn_id(),cor_id);
-        if(try_lock != 0) {
+        rc = txn->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,txn->get_txn_id(),try_lock,cor_id);
+        if(rc == Abort || try_lock != 0) {
             // printf("cas retry\n");
             mem_allocator.free(value, sizeof(RdmaTxnTableNode));
             rc = Abort;
@@ -330,7 +331,8 @@ RC Row_rdma_2pl::lock_get(yield_func_t &yield,lock_t type, TxnManager * txn, row
         uint64_t thd_id = txn->get_thd_id();
 		auto mr = client_rm_handler->get_reg_attr().value();
         uint64_t tts = txn->get_timestamp();
-        try_lock = txn->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,tts,cor_id);
+        rc = txn->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,tts,try_lock,cor_id);
+        if(rc == Abort) return rc;
         if(try_lock == 0) {
             _row->lock_owner = txn->get_txn_id();
             rc = RCOK;

@@ -18,7 +18,8 @@ retry_unlock:
     uint64_t loc = g_node_id;
     uint64_t try_lock = -1;
     uint64_t tts = txnMng->get_timestamp();
-    try_lock = txnMng->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,txnMng->get_txn_id(),cor_id);
+    RC rc = txnMng->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,txnMng->get_txn_id(),try_lock,cor_id);
+    if(rc == Abort) return;
     if(try_lock != 0) {
         // printf("cas retry\n");
         if (!simulation->is_done()) goto retry_unlock;
@@ -61,12 +62,16 @@ void RDMA_2pl::remote_write_and_unlock(yield_func_t &yield,RC rc, TxnManager * t
 retry_remote_unlock:
     uint64_t try_lock = -1;
 	uint64_t lock_type = 0;
-    try_lock = txnMng->cas_remote_content(yield,loc,off,0,txnMng->get_txn_id(),cor_id);
+    RC rc2 = txnMng->cas_remote_content(yield,loc,off,0,txnMng->get_txn_id(),try_lock,cor_id);
+    // In this time, the simluation has done.
+    if(rc2 == Abort) return;
     if(try_lock != 0) {
         // printf("cas retry\n");
         if (!simulation->is_done()) goto retry_remote_unlock;
     }
-    row_t * test_row = txnMng->read_remote_row(yield,loc,off,cor_id);
+    row_t * test_row;
+    rc2 = txnMng->read_remote_row(yield,loc,off,&test_row,cor_id);
+    if(rc2 == Abort) return;
     uint64_t i = 0;
     uint64_t lock_num = 0;
     for(i = 0; i < LOCK_LENGTH; i++) {
@@ -85,7 +90,7 @@ retry_remote_unlock:
         test_row->lock_type = 0;
     }
     test_row->_tid_word = 0;
-    assert(txnMng->write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), off,(char*)test_row, cor_id) == true);
+    txnMng->write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), off,(char*)test_row, cor_id);
 	mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 #else
     Access *access = txnMng->txn->accesses[num];
@@ -113,7 +118,7 @@ retry_remote_unlock:
     else if(CC_ALG == RDMA_NO_WAIT2) assert(orig_lock_info == 1);
 #endif
 
-    assert(txnMng->write_remote_row(yield,loc,operate_size,off,(char*)data,cor_id) == true);
+    txnMng->write_remote_row(yield,loc,operate_size,off,(char*)data,cor_id);
 
 #if DEBUG_PRINTF 
     printf("---线程号：%lu, 远程解写锁成功，锁位置: %lu; %p, 事务号: %lu, 原lock_info: %lu, new_lock_info: 0\n", txnMng->get_thd_id(), loc, remote_mr_attr[loc].buf + off, txnMng->get_txn_id(), orig_lock_info);
@@ -144,8 +149,9 @@ retry_unlock:
     uint64_t thd_id = txnMng->get_thd_id();
     uint64_t off = (char*)row - rdma_global_buffer;
 
-    uint64_t try_lock = txnMng->cas_remote_content(yield,loc,off,lock_info,new_lock_info,cor_id);
-
+    uint64_t try_lock;
+    RC rc = txnMng->cas_remote_content(yield,loc,off,lock_info,new_lock_info,try_lock,cor_id);
+    if(rc == Abort) return;
     if(try_lock != lock_info){
         //atomicity is destroyed
         txnMng->num_atomic_retry++;
@@ -166,7 +172,8 @@ retry_unlock:
     uint64_t loc = g_node_id;
     uint64_t try_lock = -1;
     uint64_t tts = txnMng->get_timestamp();
-    try_lock = txnMng->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,txnMng->get_txn_id(),cor_id);
+    RC rc = txnMng->cas_remote_content(yield,loc,(char*)row - rdma_global_buffer,0,txnMng->get_txn_id(),try_lock,cor_id);
+    if(rc == Abort) return;
     if(try_lock != 0) {
         // printf("cas retry\n");
         if (!simulation->is_done()) goto retry_unlock;
@@ -205,7 +212,9 @@ void RDMA_2pl::remote_unlock(yield_func_t &yield,TxnManager * txnMng , uint64_t 
     uint64_t off = access->offset;
     uint64_t loc = access->location;
 
-    row_t * remote_row = txnMng->read_remote_row(yield,loc,off,cor_id);
+    row_t * remote_row;
+    RC rc = txnMng->read_remote_row(yield,loc,off,&remote_row,cor_id);
+    if(rc == Abort) return;
     uint64_t *lock_info = (uint64_t *)mem_allocator.alloc(sizeof(uint64_t));
     *lock_info = remote_row->_tid_word;
 	mem_allocator.free(remote_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
@@ -223,7 +232,9 @@ remote_retry_unlock:
     assert(lock_num > 0); //already locked
 
     //remote CAS unlock
-    uint64_t try_lock = txnMng->cas_remote_content(yield,loc,off,*lock_info,new_lock_info,cor_id);
+    uint64_t try_lock;
+    rc = txnMng->cas_remote_content(yield,loc,off,*lock_info,new_lock_info,try_lock,cor_id);
+    if(rc == Abort) return;
     if(try_lock != *lock_info){ //atomicity is destroyed，CAS fail
         txnMng->num_atomic_retry++;
         total_num_atomic_retry++;
@@ -248,12 +259,15 @@ remote_retry_unlock:
 retry_remote_unlock:
     uint64_t try_lock = -1;
 	uint64_t lock_type = 0;
-    try_lock = txnMng->cas_remote_content(yield,loc,off,0,txnMng->get_txn_id(),cor_id);
+    RC rc = txnMng->cas_remote_content(yield,loc,off,0,txnMng->get_txn_id(),try_lock,cor_id);
+    if(rc == Abort) return;
     if(try_lock != 0) {
         // printf("cas retry\n");
         if (!simulation->is_done()) goto retry_remote_unlock;
     }
-    row_t * test_row = txnMng->read_remote_row(yield,loc,off,cor_id);
+    row_t * test_row;
+    rc = txnMng->read_remote_row(yield,loc,off,&test_row,cor_id);
+    if(rc == Abort) return;
     uint64_t i = 0;
     uint64_t lock_num = 0;
     for(i = 0; i < LOCK_LENGTH; i++) {
@@ -272,7 +286,7 @@ retry_remote_unlock:
         test_row->lock_type = 0;
     }
     test_row->_tid_word = 0;
-    assert(txnMng->write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), off,(char*)test_row, cor_id) == true);
+    txnMng->write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), off,(char*)test_row, cor_id);
 	mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));	
 #elif CC_ALG == RDMA_NO_WAIT2 ||  CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == RDMA_WOUND_WAIT2
     Access *access = txnMng->txn->accesses[num];
@@ -285,7 +299,7 @@ retry_remote_unlock:
     // *test_buf = 0;
     row_t *unlock_row = (row_t *)mem_allocator.alloc(row_t::get_row_size(ROW_DEFAULT_SIZE));
     unlock_row->_tid_word = 0;
-    assert(txnMng->write_remote_row(yield,loc,operate_size,off,(char *)unlock_row,cor_id) == true);
+    txnMng->write_remote_row(yield,loc,operate_size,off,(char *)unlock_row,cor_id);
     mem_allocator.free(unlock_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 
 #if DEBUG_PRINTF

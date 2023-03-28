@@ -23,8 +23,8 @@ RC Row_rdma_ts::access(yield_func_t &yield, TxnManager * txn, Access *access, ac
 	uint64_t loc = g_node_id;
 	int retry = 0;
 retry_read:
-	suc = txn->cas_remote_content(yield,loc,(char*)_row - rdma_global_buffer,lock_info,new_lock_info,cor_id);
-	if (new_lock_info != _row->mutx) {
+	rc = txn->cas_remote_content(yield,loc,(char*)_row - rdma_global_buffer,lock_info,new_lock_info,suc,cor_id);
+	if (rc == Abort || new_lock_info != _row->mutx) {
 		INC_STATS(txn->get_thd_id(),lock_retry_cnt,1);
 		// printf("txn %ld lock failed, current lock is %ld, suc = %ld\n", new_lock_info, _row->mutx, suc);
 		rc = Abort;
@@ -169,9 +169,10 @@ RC Row_rdma_ts::local_commit(yield_func_t &yield, TxnManager * txn, Access *acce
 	uint64_t loc = g_node_id;
 	uint64_t new_lock_info = txn->get_txn_id()+1;
 	uint64_t lock_info = 0;
-	bool suc;
+	uint64_t suc;
 	do {
-		suc = txn->cas_remote_content(yield,loc,(char*)_row - rdma_global_buffer,lock_info,new_lock_info,cor_id);
+		rc = txn->cas_remote_content(yield,loc,(char*)_row - rdma_global_buffer,lock_info,new_lock_info,suc,cor_id);
+		if (rc == Abort) return rc;
 	}while(new_lock_info != _row->mutx);
 
 	if (type == WR) {

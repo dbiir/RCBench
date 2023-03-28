@@ -193,8 +193,6 @@ public:
 	RC find_bound(TxnManager * txn);
 	RC remote_abort(yield_func_t &yield, TxnManager * txn, Access * data, uint64_t cor_id);
 	RC remote_commit(yield_func_t &yield, TxnManager * txn, Access * data, uint64_t cor_id);
-	// RdmaTxnTableNode * read_remote_timetable(yield_func_t &yield, TxnManager * txn, uint64_t node_id, uint64_t cor_id);
-	// RdmaTxnTableNode * read_remote_timetable(TxnManager * txn, uint64_t node_id);
 private:
 	sem_t 	_semaphore;
 };
