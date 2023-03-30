@@ -3994,7 +3994,7 @@ RC TxnManager::faa_remote_content(yield_func_t &yield, uint64_t target_server,ui
 	if (res_p.first == 0) return Abort;
 #else
 	auto res_p = rc_qp[target_server][thd_id]->wait_one_comp();
-	if (res_s != rdmaio::IOCode::Ok) return Abort;
+	if (res_p != rdmaio::IOCode::Ok) return Abort;
     endtime = get_sys_clock();
 	INC_STATS(get_thd_id(), worker_idle_time, endtime-starttime);
 	DEL_STATS(get_thd_id(), worker_process_time, endtime-starttime);

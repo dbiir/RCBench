@@ -232,8 +232,8 @@ def ycsb_scaling_l():
 def ycsb_scaling_m():
     wl = 'YCSB'
     #nnodes = [1,2,4,8,16,32,64]
-    # nnodes = [3,6,9,12]
-    nnodes = [12]
+    nnodes = [3,6,9,12]
+    # nnodes = [3]
     # nnodes = [2,4,6,8,10]
     # algos=['CALVIN','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE']
     # algos=['CICADA','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE','WOUND_WAIT']
@@ -251,11 +251,11 @@ def ycsb_scaling_m():
     # base_table_size=2097152*8
     txn_write_perc = [1]
     tup_write_perc = [0.2]
-    load = [20000]
+    load = [96]
     tcnt = [24]
-    ctcnt = [2]
-    scnt = [1]
-    rcnt = [1]
+    ctcnt = [4]
+    scnt = [2]
+    rcnt = [2]
     skew = [0.5]
     # skew = [0.0,0.5,0.9]
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","SYNTH_TABLE_SIZE","TUP_WRITE_PERC","TXN_WRITE_PERC","MAX_TXN_IN_FLIGHT","COROUTINE_CNT","ZIPF_THETA","THREAD_CNT","CLIENT_THREAD_CNT","SEND_THREAD_CNT","REM_THREAD_CNT","CLIENT_SEND_THREAD_CNT","CLIENT_REM_THREAD_CNT"]
@@ -295,13 +295,13 @@ def ycsb_scaling_h():
 def ycsb_scaling_tcp():
     wl = 'YCSB'
     #nnodes = [1,2,4,8,16,32,64]
-    nnodes = [4]
+    nnodes = [6]
     # nnodes = [3,6]
     # nnodes = [3,6,9,12,15]
     # algos=['CALVIN','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE']
     #'RDMA_CICADA','RDMA_MVCC','RDMA_NO_WAIT','RDMA_NO_WAIT2','RDMA_WAIT_DIE2'
-    # algos=['NO_WAIT']
-    algos=['CICADA','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE','WOUND_WAIT','CALVIN']
+    algos=['NO_WAIT']
+    # algos=['CICADA','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE','WOUND_WAIT','CALVIN']
     # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
     # algos = ['RDMA_CICADA','RDMA_MVCC','RDMA_TS1']
     # algos = ['RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT']
@@ -1524,8 +1524,8 @@ configs = {
     "ONLY_ONE_HOME": 'false',
     "NO_PHYSICAL": 'false',
     "NETWORK_DELAY_TEST": 'false',
-    "DONE_TIMER": "1 * 20 * BILLION // ~1 minutes",
-    "WARMUP_TIMER": "1 * 10 * BILLION // ~1 minutes",
+    "DONE_TIMER": "1 * 30 * BILLION // ~1 minutes",
+    "WARMUP_TIMER": "1 * 30 * BILLION // ~1 minutes",
     "SEQ_BATCH_TIMER": "5 * 1 * MILLION // ~5ms -- same as CALVIN paper",
     "BATCH_TIMER" : "0",
     "PROG_TIMER" : "10 * BILLION // in s",
@@ -1537,6 +1537,7 @@ configs = {
     "TXN_WRITE_PERC":0.2,
     "PRIORITY":"PRIORITY_ACTIVE",
     "TWOPL_LITE":"false",
+    # "RDMA_SIT":"SIT_ONE_SIDE",
     "RDMA_SIT":"SIT_COROUTINE",
 #YCSB
     "INIT_PARALLELISM" : 1,

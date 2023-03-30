@@ -26,8 +26,8 @@ Row_rdma_silo::access(TxnManager * txn, TsType type, row_t * local_row) {
 		DEBUG("WRITE %ld -- %ld \n",txn->get_txn_id(),_row->get_primary_key());
 	}
 
-  //todo : lock currenct row
-  local_row->copy(_row);
+  	//todo : lock currenct row
+  	local_row->copy(_row);
 
 	return RCOK;
 }

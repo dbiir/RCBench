@@ -36,7 +36,8 @@
 void InputThread::setup() {
 
 	std::vector<Message*> * msgs;
-	while(!simulation->is_setup_done()) {
+	if (RDMA_ONE_SIDE) simulation->set_setup_done();
+	while(!RDMA_ONE_SIDE && !simulation->is_setup_done()) {
 #ifdef USE_RDMA
         msgs = tport_man.rdma_recv_msg(get_thd_id());
 #else

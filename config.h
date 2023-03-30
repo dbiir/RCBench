@@ -33,41 +33,41 @@
   #define RDMA_TWO_SIDE false
   #define USE_COROUTINE false
   #define USE_DBPAOR false
-#define SERVER_GENERATE_QUERIES false
+  #define SERVER_GENERATE_QUERIES false
 #elif RDMA_SIT == SIT_TWO_SIDE
   #define RDMA_ONE_SIDE false
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE false
   #define USE_DBPAOR false
-#define SERVER_GENERATE_QUERIES false
+  #define SERVER_GENERATE_QUERIES false
 #elif RDMA_SIT == SIT_ONE_SIDE
   #define RDMA_ONE_SIDE true
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE false
   #define USE_DBPAOR false
-  #if CC_ALG == RDMA_CALVIN
+  // #if CC_ALG == RDMA_CALVIN
     #define SERVER_GENERATE_QUERIES false
-  #else
-    #define SERVER_GENERATE_QUERIES true
-  #endif
+  // #else
+    // #define SERVER_GENERATE_QUERIES false
+  // #endif
 #elif RDMA_SIT == SIT_COROUTINE// || CC_ALG == RDMA_WOUND_WAIT
   #define RDMA_ONE_SIDE true
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE true
   #define USE_DBPAOR false
-#define SERVER_GENERATE_QUERIES true
+  #define SERVER_GENERATE_QUERIES true
 #elif RDMA_SIT == SIT_DBPA
   #define RDMA_ONE_SIDE true
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE false
   #define USE_DBPAOR true
-#define SERVER_GENERATE_QUERIES true
+  #define SERVER_GENERATE_QUERIES true
 #elif RDMA_SIT == SIT_ALL
   #define RDMA_ONE_SIDE true
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE true
   #define USE_DBPAOR true
-#define SERVER_GENERATE_QUERIES true
+  #define SERVER_GENERATE_QUERIES true
 #endif
 /************RDMA TYPE**************/
 #define CHANGE_TCP_ONLY 0
@@ -123,18 +123,18 @@
 /***********************************************/
 // Simulation + Hardware
 /***********************************************/
-#define NODE_CNT 12
+#define NODE_CNT 6
 #define THREAD_CNT 24
-#define REM_THREAD_CNT 1
-#define SEND_THREAD_CNT 1
+#define REM_THREAD_CNT 2
+#define SEND_THREAD_CNT 2
 #define COROUTINE_CNT 8
 #define CORE_CNT 2
 // PART_CNT should be at least NODE_CNT
 #define PART_CNT NODE_CNT
 #define CLIENT_NODE_CNT 1
-#define CLIENT_THREAD_CNT 2
-#define CLIENT_REM_THREAD_CNT 1
-#define CLIENT_SEND_THREAD_CNT 1
+#define CLIENT_THREAD_CNT 4
+#define CLIENT_REM_THREAD_CNT 2
+#define CLIENT_SEND_THREAD_CNT 2
 #define CLIENT_RUNTIME false
 
 #define LOAD_METHOD LOAD_MAX
@@ -165,7 +165,7 @@
 #define TIME_ENABLE         true //STATS_ENABLE
 
 #define FIN_BY_TIME true
-#define MAX_TXN_IN_FLIGHT 20000
+#define MAX_TXN_IN_FLIGHT 96
 
 /***********************************************/
 // Memory System
@@ -234,7 +234,7 @@
 /***********************************************/
 // USE RDMA
 /**********************************************/
-#if (CC_ALG == RDMA_MAAT || CC_ALG == RDMA_SILO || CC_ALG == RDMA_MVCC || CC_ALG == RDMA_NO_WAIT || CC_ALG == RDMA_NO_WAIT2 || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == RDMA_TS1 || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == RDMA_CICADA || CC_ALG == RDMA_CNULL || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_MOCC || RDMA_TWO_SIDE == true) && RDMA_SIT != 0
+#if RDMA_TWO_SIDE
 // #define USE_RDMA CHANGE_MSG_QUEUE
 #define USE_RDMA CHANGE_TCP_ONLY
 #endif
@@ -364,7 +364,7 @@
 #define DATA_PERC 100
 #define ACCESS_PERC 0.03
 #define INIT_PARALLELISM 1
-#define SYNTH_TABLE_SIZE 12582912
+#define SYNTH_TABLE_SIZE 6291456
 #define ZIPF_THETA 0.5
 #define TXN_WRITE_PERC 1
 #define TUP_WRITE_PERC 0.2
@@ -612,8 +612,8 @@ enum PPSTxnType {
 #define PROG_TIMER 10 * BILLION // in s
 #define BATCH_TIMER 0
 #define SEQ_BATCH_TIMER 5 * 1 * MILLION // ~5ms -- same as CALVIN paper
-#define DONE_TIMER 1 * 20 * BILLION // ~1 minutes
-#define WARMUP_TIMER 1 * 10 * BILLION // ~1 minutes
+#define DONE_TIMER 1 * 30 * BILLION // ~1 minutes
+#define WARMUP_TIMER 1 * 30 * BILLION // ~1 minutes
 
 #define SEED 0
 #define SHMEM_ENV false

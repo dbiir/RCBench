@@ -681,6 +681,7 @@ void Transport::rdma_send_msg(uint64_t send_thread_id, uint64_t dest_node_id, ch
 		dest_node_id, port_id);
 
 	unsigned int send_flags = send_qpi->count + 1 > send_qpi->max_count ? IBV_SEND_SIGNALED : 0;
+	if (RDMA_ONE_SIDE || !simulation->is_setup_done()) send_flags = IBV_SEND_SIGNALED;
 	// unsigned int send_flags = send_qpi->count == 0 ? IBV_SEND_SIGNALED : 0;
 	auto res_s = send_qpi->send_qps->send_normal(
 		{.op = IBV_WR_SEND_WITH_IMM,
@@ -693,8 +694,13 @@ void Transport::rdma_send_msg(uint64_t send_thread_id, uint64_t dest_node_id, ch
 	RDMA_ASSERT(res_s == IOCode::Ok);
 	// void* pVoid = buf;
 	// RDMA_LOG(4) << port_id-TPORT_TWOSIDE_PORT << " RDMA send " << (send_qpi->count) << " buf size "<< (u32) size + sizeof(size) + 1 << " buf ptr " << pVoid << " flags " << send_flags;
-	if (send_qpi->count >= send_qpi->max_count) {
+	if (send_flags) {
 		auto res_p = send_qpi->send_qps->wait_one_comp(10000000);
+		while (res_p != IOCode::Ok) {
+			res_p = send_qpi->send_qps->wait_one_comp(10000000);
+		} 
+		// printf("%ld Batch of %d bytes sent to node %ld\n",send_thread_id,size + sizeof(size) + 1,dest_node_id);
+		// auto res_p = send_qpi->send_qps->wait_one_comp(10000000);
 		// RDMA_LOG(4) << port_id-TPORT_TWOSIDE_PORT << " RDMA send wait ";
 		// RDMA_ASSERT(res_p == IOCode::Ok);
 		pthread_mutex_lock( tport_man.latch );
@@ -704,7 +710,7 @@ void Transport::rdma_send_msg(uint64_t send_thread_id, uint64_t dest_node_id, ch
 		send_qpi->count ++;
 	}
 
-	DEBUG("%ld Batch of %d bytes sent to node %ld\n",send_thread_id,size + sizeof(size) + 1,dest_node_id);
+	printf("%ld Batch of %d bytes sent to node %ld\n",send_thread_id,size + sizeof(size) + 1,dest_node_id);
 
 	INC_STATS(send_thread_id,msg_send_time,get_sys_clock() - starttime);
 	INC_STATS(send_thread_id,msg_send_cnt,1);

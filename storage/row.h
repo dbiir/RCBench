@@ -21,7 +21,8 @@
 #include "global.h"
 #include "routine.h"
 
-#define ROW_DEFAULT_SIZE 1000
+// #define ROW_DEFAULT_SIZE 1000
+#define ROW_DEFAULT_SIZE 0
 #include "row_rdma_cicada.h"
 
 
