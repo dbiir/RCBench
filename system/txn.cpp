@@ -3414,6 +3414,7 @@ RC TxnManager::cas_and_read_remote(yield_func_t &yield, uint64_t& try_lock, uint
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (dbres1.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
+	if (dbres1.first == 0) return Abort;
 	// RDMA_ASSERT(res_p != rdmaio::IOCode::Ok);
 #else
 	auto dbres1 = rc_qp[target_server][thd_id]->wait_one_comp();
@@ -3633,6 +3634,7 @@ void TxnManager::get_batch_read(yield_func_t &yield, BatchReadType rtype,int loc
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (dbres1.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
+	if (dbres1.first == 0) return Abort;
 	// RDMA_ASSERT(res_p != rdmaio::IOCode::Ok);
 #else
 	auto dbres1 = rc_qp[loc][thd_id]->wait_one_comp();
@@ -3710,6 +3712,7 @@ RC TxnManager::read_remote_row(yield_func_t &yield, uint64_t target_server,uint6
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
+	if (res_p.first == 0) return Abort;
 #else
 	auto res_p = rc_qp[target_server][thd_id]->wait_one_comp();
 	if (res_p != rdmaio::IOCode::Ok) return Abort;
@@ -3767,6 +3770,7 @@ RC TxnManager::read_remote_index(yield_func_t &yield, uint64_t target_server,uin
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
+	if (res_p.first == 0) return Abort;
 #else
 	auto res_p = rc_qp[target_server][thd_id]->wait_one_comp();
 	if (res_p != rdmaio::IOCode::Ok) return Abort;
@@ -3828,6 +3832,7 @@ RC TxnManager::write_remote_row(yield_func_t &yield, uint64_t target_server,uint
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
+	if (res_p.first == 0) return Abort;
 #else
 	auto res_p = rc_qp[target_server][thd_id]->wait_one_comp();
 	if (res_p != rdmaio::IOCode::Ok) return Abort;
@@ -3881,6 +3886,7 @@ RC TxnManager::write_remote_index(yield_func_t &yield,uint64_t target_server,uin
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
+	if (res_p.first == 0) return Abort;
 #else
 	auto res_p = rc_qp[target_server][thd_id]->wait_one_comp();
 	if (res_p != rdmaio::IOCode::Ok) return Abort;
@@ -3935,6 +3941,7 @@ RC TxnManager::cas_remote_content(yield_func_t &yield, uint64_t target_server,ui
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
+	if (res_p.first == 0) return Abort;
 
 #else
 	auto res_p = rc_qp[target_server][thd_id]->wait_one_comp();
@@ -3984,7 +3991,7 @@ RC TxnManager::faa_remote_content(yield_func_t &yield, uint64_t target_server,ui
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
-
+	if (res_p.first == 0) return Abort;
 #else
 	auto res_p = rc_qp[target_server][thd_id]->wait_one_comp();
 	if (res_s != rdmaio::IOCode::Ok) return Abort;
@@ -4047,7 +4054,7 @@ RC TxnManager::read_remote_timetable(yield_func_t &yield, uint64_t target_server
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
-
+	if (res_p.first == 0) return Abort;
 #else
 	auto res_p = rc_qp[target_server][thd_id]->wait_one_comp();
 	if (res_p != rdmaio::IOCode::Ok) return Abort;
@@ -4103,7 +4110,7 @@ RC TxnManager::read_remote_txntable(yield_func_t &yield, uint64_t target_server,
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
-
+	if (res_p.first == 0) return Abort;
 #else
 	auto res_p = rc_qp[target_server][thd_id]->wait_one_comp();
 	if (res_p != rdmaio::IOCode::Ok) return Abort;
@@ -4294,7 +4301,7 @@ RC TxnManager::faa_remote_content(yield_func_t &yield, uint64_t target_server,ui
 		INC_STATS(get_thd_id(), worker_waitcomp_time, waitcomp_time - yield_endtime);
 	} while (res_p.first == 0 && !simulation->is_done());
 	h_thd->cor_process_starttime[cor_id] = get_sys_clock();
-
+	if (res_p.first == 0) return Abort;
 #else
 	auto res_p = rc_qp[target_server][thd_id]->wait_one_comp();
 	if (res_p != rdmaio::IOCode::Ok) return Abort;

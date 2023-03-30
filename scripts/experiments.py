@@ -199,15 +199,15 @@ def ycsb_scaling():
 def ycsb_scaling_l():
     wl = 'YCSB'
     #nnodes = [1,2,4,8,16,32,64]
-    nnodes = [8]
+    # nnodes = [9,12]
     # nnodes = [2,4,6,8,10]
-    # nnodes = [3,6,9,12]
+    nnodes = [3,6,9,12]
     # algos=['CALVIN','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE']
     # algos=['CICADA','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE','WOUND_WAIT']
-    # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
-    # algos = ['RDMA_CICADA','RDMA_MVCC','RDMA_TS1']
+    algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    # algos = ['RDMA_SILO']
     # algos = ['RDMA_WAIT_DIE','RDMA_WOUND_WAIT','RDMA_NO_WAIT']
-    algos = ['RDMA_SILO']
+    # algos = ['RDMA_SILO']
     # algos = ['RDMA_CICADA']#,'RDMA_WOUND_WAIT2']
     # algos = ['CALVIN']
     # algos = ['WOUND_WAIT']
@@ -229,20 +229,19 @@ def ycsb_scaling_l():
     #skew = [0.0]
     #exp = exp + [[wl,n,algo,base_table_size*n,tup_wr_perc,txn_wr_perc,ld,sk,thr] for thr,txn_wr_perc,tup_wr_perc,sk,ld,n,algo in itertools.product(tcnt,txn_write_perc,tup_write_perc,skew,load,nnodes,algos)]
     return fmt,exp
-
 def ycsb_scaling_m():
     wl = 'YCSB'
     #nnodes = [1,2,4,8,16,32,64]
     # nnodes = [3,6,9,12]
-    nnodes = [2,4]
+    nnodes = [12]
     # nnodes = [2,4,6,8,10]
     # algos=['CALVIN','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE']
     # algos=['CICADA','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE','WOUND_WAIT']
     # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WOUND_WAIT2','RDMA_WAIT_DIE2']
     # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_SILO','RDMA_WAIT_DIE2']
     # algos=['RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2']
-    algos = ['RDMA_CICADA','RDMA_MVCC']
-    # algos = ['RDMA_SILO']
+    # algos = ['RDMA_CICADA','RDMA_MVCC']
+    algos = ['RDMA_SILO']
     # algos = ['RDMA_TS1']
     # algos = ['RDMA_CICADA']#,'RDMA_WOUND_WAIT2']
     # algos = ['CALVIN']
@@ -270,10 +269,10 @@ def ycsb_scaling_h():
     #nnodes = [1,2,4,8,16,32,64]
     # nnodes = [2,4,6,8,10]
     # nnodes = [8]
-    nnodes = [2,4,6,8]
+    nnodes = [3,6,9,12]
     # algos=['RDMA_MVCC']
-    # algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
-    algos=['RDMA_MVCC']
+    algos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    # algos=['RDMA_MVCC']
     # base_table_size=262144*10
     base_table_size=1048576
     # base_table_size=2097152*8
@@ -553,7 +552,6 @@ def ecwc():
     exp = [[wl,n,algo,base_table_size*n,tup_wr_perc,txn_wr_perc,ld,sk,thr] for thr,txn_wr_perc,tup_wr_perc,sk,ld,n,algo in itertools.product(tcnt,txn_write_perc,tup_write_perc,skew,load,nnodes,algos)]
     return fmt,exp
 
-
 def ycsb_scaling_abort():
     wl = 'YCSB'
     nnodes = [1,2,4,8,16,32,64]
@@ -568,7 +566,6 @@ def ycsb_scaling_abort():
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","SYNTH_TABLE_SIZE","TUP_WRITE_PERC","TXN_WRITE_PERC","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT","YCSB_ABORT_MODE"]
     exp = [[wl,n,algo,base_table_size*n,tup_wr_perc,txn_wr_perc,ld,sk,thr,'true'] for thr,txn_wr_perc,tup_wr_perc,sk,ld,n,algo in itertools.product(tcnt,txn_write_perc,tup_write_perc,skew,load,nnodes,algos)]
     return fmt,exp
-
 
 # def ycsb_skew():
 #     wl = 'YCSB'
@@ -1048,15 +1045,16 @@ def tpcc_scaling():
     # wh=4
     # exp = exp+[[wl,n,cc,pp,wh*n,tif] for tif,pp,n,cc in itertools.product(load,npercpay,nnodes,nalgos)]
     return fmt,exp
+
 def tpcc_scaling_n():
     wl = 'TPCC'
-    nnodes = [2,4,6,8]
-    # nnodes = [10]
+    nnodes = [3,6,9,12]
+    # nnodes = [3]
     # nalgos=['NO_WAIT','WAIT_DIE','MAAT','MVCC','TIMESTAMP','CALVIN','WOOKONG']
     # nalgos=['CALVIN','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE']
     # nalgos=['RDMA_CICADA']
-    nalgos=['RDMA_SILO']
-    # nalgos=['RDMA_CICADA','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2','RDMA_MAAT']
+    nalgos=['RDMA_MAAT']
+    # nalgos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
     npercpay=[0.0]
     # npercpay=[1.0]
     wh=32
@@ -1072,13 +1070,14 @@ def tpcc_scaling_n():
     return fmt,exp
 def tpcc_scaling_p():
     wl = 'TPCC'
-    nnodes = [2,4,6,8]
-    # nnodes = [10]
+    nnodes = [3,6,9,12]
+    # nnodes = [9,12]
     # nalgos=['NO_WAIT','WAIT_DIE','MAAT','MVCC','TIMESTAMP','CALVIN','WOOKONG']
     # nalgos=['CALVIN','MAAT','MVCC','NO_WAIT','SILO','TIMESTAMP','WAIT_DIE']
     # nalgos=['RDMA_CICADA']
-    nalgos=['RDMA_MVCC']
-    # nalgos=['RDMA_CICADA','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2','RDMA_MAAT']
+    # nalgos=['RDMA_MVCC']
+    nalgos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
+    # nalgos=['RDMA_CICADA','RDMA_MAAT','RDMA_MVCC','RDMA_NO_WAIT2','RDMA_SILO','RDMA_TS1','RDMA_WAIT_DIE2','RDMA_WOUND_WAIT2']
     npercpay=[1.0]
     # npercpay=[1.0]
     wh=32

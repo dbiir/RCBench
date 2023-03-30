@@ -239,11 +239,13 @@ RC rdma_mvcc::finish(yield_func_t &yield, RC rc,TxnManager * txnMng, uint64_t co
                 }
             }
             else{ //local
-                assert(txnMng->loop_cas_remote(loc,remote_offset,0,lock_num) == RCOK);
+                rc = txnMng->loop_cas_remote(loc,remote_offset,0,lock_num);
+                if (rc == Abort) return rc;
             }
         #else
            //lock in loop
-           assert(txnMng->loop_cas_remote(yield,loc,remote_offset,0,lock_num,cor_id) == RCOK);
+           rc = txnMng->loop_cas_remote(yield,loc,remote_offset,0,lock_num,cor_id);
+           if (rc == Abort) return rc;
         #endif
 
            if(txn->accesses[num]->location == g_node_id){//local

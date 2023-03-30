@@ -138,7 +138,8 @@ RC Row_rdma_ts1::local_commit(yield_func_t &yield, TxnManager * txn, Access *acc
 
 	if (type == XP) {
 		//lock until success!
-    	assert(txn->loop_cas_remote(access->location,access->offset,0,txn->get_txn_id()+1) == RCOK);//lock in loop
+    	rc = txn->loop_cas_remote(access->location,access->offset,0,txn->get_txn_id()+1);//lock in loop
+		if (rc == Abort) return rc;
 #if DEBUG_PRINTF
 		// printf("[本地写入前]事务号：%d，主键：%d，锁：%lu，tid：%lu,rts:%lu,wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
 #endif
@@ -154,7 +155,8 @@ RC Row_rdma_ts1::local_commit(yield_func_t &yield, TxnManager * txn, Access *acc
 		_row->mutx = 0;
 	} 
 	else if (type == WR) {
-		assert(txn->loop_cas_remote(access->location,access->offset,0,txn->get_txn_id()+1) == RCOK);//lock in loop
+		rc = txn->loop_cas_remote(access->location,access->offset,0,txn->get_txn_id()+1);//lock in loop
+		if (rc == Abort) return rc;
 		int i = 0;
 		for (i = 0; i < CASCADING_LENGTH; i++) {
 			if (_row->tid[i] == txn->get_txn_id()) break;

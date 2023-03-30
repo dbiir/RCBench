@@ -515,7 +515,7 @@ RC RDMA_Maat::remote_abort(yield_func_t &yield, TxnManager * txnMng, Access * da
 		temp_row->_tid_word = 0;
         operate_size = row_t::get_row_size(temp_row->tuple_size);
 		// memcpy(tmp_buf2, (char *)temp_row, operate_size);
-        assert(txnMng->write_remote_row(yield,loc,operate_size,off,(char *)temp_row, cor_id) == true);
+        txnMng->write_remote_row(yield,loc,operate_size,off,(char *)temp_row, cor_id);
 		//uncommitted_writes->erase(txn->get_txn_id());
 	}
 	mem_allocator.free(temp_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
@@ -624,7 +624,7 @@ RC RDMA_Maat::remote_commit(yield_func_t &yield, TxnManager * txnMng, Access * d
 		temp_row->_tid_word = 0;
         operate_size = row_t::get_row_size(temp_row->tuple_size);
 		// memcpy(tmp_buf2, (char *)temp_row, operate_size);
-        assert(txnMng->write_remote_row(yield,loc,operate_size,off, (char *)temp_row, cor_id) == true);
+        txnMng->write_remote_row(yield,loc,operate_size,off, (char *)temp_row, cor_id);
 	}
 
 	if(data->type == WR || WORKLOAD == TPCC) {
@@ -736,7 +736,7 @@ RC RDMA_Maat::remote_commit(yield_func_t &yield, TxnManager * txnMng, Access * d
 		temp_row->_tid_word = 0;
         operate_size = row_t::get_row_size(temp_row->tuple_size);
 		// memcpy(tmp_buf2, (char *)temp_row, operate_size);
-		assert(txnMng->write_remote_row(yield,loc,operate_size,off,(char *)temp_row, cor_id) == true);
+		txnMng->write_remote_row(yield,loc,operate_size,off,(char *)temp_row, cor_id);
 		//uncommitted_writes->erase(txn->get_txn_id());
 	}
 	mem_allocator.free(temp_row, row_t::get_row_size(ROW_DEFAULT_SIZE));

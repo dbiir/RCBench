@@ -164,9 +164,10 @@ void  RDMA_ts1::commit_write(yield_func_t &yield, TxnManager * txn , uint64_t nu
 		mem_allocator.free(remote_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 	}
 #else
-    assert(txn->loop_cas_remote(yield,loc,offset,0,lock_num,cor_id) == RCOK);//lock in loop
+    RC rc = txn->loop_cas_remote(yield,loc,offset,0,lock_num,cor_id);//lock in loop
+	if (rc == Abort) return ;
 	row_t *remote_row;
-	RC rc = txn->read_remote_row(yield,loc,offset,&remote_row,cor_id);
+	rc = txn->read_remote_row(yield,loc,offset,&remote_row,cor_id);
 	if (rc == Abort) return ;
 
 	if (type == XP) {

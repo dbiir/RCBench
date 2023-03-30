@@ -227,7 +227,8 @@ bool RDMA_silo::validate_rw_remote(yield_func_t &yield, TxnManager * txn , uint6
 	RC rc = txn->read_remote_row(yield,target_server,remote_offset,&temp_row,cor_id);
 
 //check whether it was changed by other transaction
-	if(rc == Abort || (temp_row->_tid_word != lock && temp_row->_tid_word != 0)){
+	if(rc == Abort) return false;
+	if (temp_row->_tid_word != lock && temp_row->_tid_word != 0){
 		succ = false;
 		INC_STATS(txn->get_thd_id(), validate_lock_abort, 1);
 	}
@@ -235,8 +236,7 @@ bool RDMA_silo::validate_rw_remote(yield_func_t &yield, TxnManager * txn , uint6
 	if(temp_row->timestamp != txn->txn->accesses[num]->timestamp){
 		succ = false;
 	}
-
-	mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
+	if (rc != Abort) mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 
 	return succ;
 }

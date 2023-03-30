@@ -63,9 +63,10 @@ void RDMA_ts::commit_write(yield_func_t &yield, TxnManager * txn , uint64_t num 
 			remote_row = txn->cas_and_read_remote(yield,try_lock,loc,offset,offset,0,lock_num,cor_id);
 		}
 	#else
-		assert(txn->loop_cas_remote(yield,loc,offset,0,lock_num,cor_id) == RCOK);//lock in loop
+		RC rc = txn->loop_cas_remote(yield,loc,offset,0,lock_num,cor_id);
+		if (rc == Abort) return;
 		row_t *remote_row;
-		RC rc = txn->read_remote_row(yield,loc,offset,&remote_row,cor_id);
+		rc = txn->read_remote_row(yield,loc,offset,&remote_row,cor_id);
 		if (rc == Abort) return;
 	#endif
 	row_t* _row = remote_row;
