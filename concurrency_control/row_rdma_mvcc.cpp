@@ -27,7 +27,7 @@ void Row_rdma_mvcc::init(row_t * row) {
 	_row = row;
 }
 
-RC Row_rdma_mvcc::access(TxnManager * txn, Access *access, access_t type) {
+RC Row_rdma_mvcc::access(yield_func_t &yield, TxnManager * txn, Access *access, access_t type, uint64_t cor_id) {
 	RC rc = RCOK;
     if(type == RD){
         //local read;
@@ -38,13 +38,13 @@ RC Row_rdma_mvcc::access(TxnManager * txn, Access *access, access_t type) {
 		bool result = false;
 		result = txn->get_version(temp_row,&change_num,txn->txn);
 		if(result == false){//no proper version: Abort
-			// printf("local %ld no version\n",temp_row->get_primary_key());
+			DEBUG_T("local %ld no version\n",temp_row->get_primary_key());
 			rc = Abort;
 			return rc;
 		}
 		//check txn_id
 		if(temp_row->txn_id[change_num] != 0 && temp_row->txn_id[change_num] != txn->get_txn_id() + 1){
-			// printf("local %ld write by other %ld\n",temp_row->get_primary_key(),temp_row->txn_id[change_num]);
+			DEBUG_T("local %ld write by other %ld\n",temp_row->get_primary_key(),temp_row->txn_id[change_num]);
 			rc = Abort;
 			return rc;
 		}
@@ -55,7 +55,7 @@ RC Row_rdma_mvcc::access(TxnManager * txn, Access *access, access_t type) {
 		uint64_t cas_result;
 		rc = txn->cas_remote_content(access->location,rts_offset,old_rts,new_rts,cas_result);//lock
 		if(rc == Abort || cas_result!=old_rts){ //CAS fail, atomicity violated
-			// printf("local %ld rts update failed old %ld now %ld new %ld\n",temp_row->get_primary_key(), old_rts, cas_result, new_rts);
+			DEBUG_T("local %ld rts update failed old %ld now %ld new %ld\n",temp_row->get_primary_key(), old_rts, cas_result, new_rts);
 			rc = Abort;
 			return rc;			
 		}
@@ -70,12 +70,13 @@ RC Row_rdma_mvcc::access(TxnManager * txn, Access *access, access_t type) {
     else if(type == WR){
         uint64_t lock = txn->get_txn_id()+1;
 		uint64_t try_lock = -1;
-		rc = txn->cas_remote_content(access->location,access->offset,0,lock,try_lock);//lock
+		rc = txn->cas_remote_content(yield, access->location,access->offset,0,lock,try_lock, cor_id);//lock
 		if(rc == Abort || try_lock != 0){
-			// printf("local %ld lock failed other %ld me %ld\n",_row->get_primary_key(), try_lock, lock);
+			DEBUG_T("local %ld %ld lock failed other %ld/%ld me %ld\n",_row->get_primary_key(),access->offset, try_lock, _row->_tid_word, lock);
 			rc = Abort;
 			return rc;
 		}
+		DEBUG_T("local %ld %ld lock me %ld\n",_row->get_primary_key(),access->offset,  lock);
         //local read;
         row_t *temp_row = (row_t *)mem_allocator.alloc(row_t::get_row_size(ROW_DEFAULT_SIZE));
         memcpy(temp_row, _row, row_t::get_row_size(ROW_DEFAULT_SIZE));
@@ -85,7 +86,7 @@ RC Row_rdma_mvcc::access(TxnManager * txn, Access *access, access_t type) {
 			//local unlock and Abort
 			_row->_tid_word = 0;
 			mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
-			// printf("local %ld write by other other %ld (write op)\n", temp_row->get_primary_key(), temp_row->txn_id[version]);
+			DEBUG_T("local %ld write by other other %ld (write op)\n", temp_row->get_primary_key(), temp_row->txn_id[version]);
 			rc = Abort;
 			return rc;
 		}
@@ -98,7 +99,7 @@ RC Row_rdma_mvcc::access(TxnManager * txn, Access *access, access_t type) {
         temp_row->txn_id[version] = txn->get_txn_id() + 1;
 		temp_row->rts[version] = txn->get_timestamp();
 		temp_row->_tid_word = 0;
-		// printf("local %ld write %ld\n",temp_row->get_primary_key(),temp_row->txn_id[version]);
+		DEBUG_T("txn %ld local %ld %ld write %ld release latch %ld\n",lock, temp_row->get_primary_key(), (char*)_row - rdma_global_buffer, temp_row->txn_id[version], _row->_tid_word);
 		txn->cur_row->copy(temp_row);
 		mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 		rc = RCOK;
@@ -129,27 +130,6 @@ void Row_rdma_mvcc::local_write_back(TxnManager * txnMng , int num){
         last_ver = version_change - 1;
     } 
     row->txn_id[last_ver] = 0;
-}
-
-void Row_rdma_mvcc::local_release_lock(TxnManager * txnMng , int num){
-    Transaction *txn = txnMng->txn;
-
-    uint64_t off = txn->accesses[num]->offset;
-    uint64_t loc = txn->accesses[num]->location;
-	uint64_t thd_id = txnMng->get_thd_id();
-	uint64_t lock = txnMng->get_txn_id();
-
-	uint64_t *test_loc = (uint64_t *)Rdma::get_row_client_memory(thd_id);
-	auto mr = client_rm_handler->get_reg_attr().value();
-
-	rdmaio::qp::Op<> op;
-    op.set_atomic_rbuf((uint64_t*)(remote_mr_attr[loc].buf + off), remote_mr_attr[loc].key).set_cas(lock, 0);
-  	assert(op.set_payload(test_loc, sizeof(uint64_t), mr.key) == true);
-  	auto res_s2 = op.execute(rc_qp[loc][thd_id], IBV_SEND_SIGNALED);
-
-	RDMA_ASSERT(res_s2 == IOCode::Ok);
-	auto res_p2 = rc_qp[loc][thd_id]->wait_one_comp();
-	RDMA_ASSERT(res_p2 == IOCode::Ok);
 }
 
 #endif

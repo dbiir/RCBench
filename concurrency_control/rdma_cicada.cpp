@@ -172,7 +172,7 @@ RC RDMA_Cicada::remote_read_or_write(yield_func_t &yield, Access * data, TxnMana
 	uint64_t loc = data->location;
 	uint64_t thd_id = txnMng->get_thd_id();
 	uint64_t lock = txnMng->get_txn_id() + 1;
-	uint64_t operate_size = row_t::get_row_size(ROW_DEFAULT_SIZE);
+	uint64_t operate_size = row_t::get_row_size(RDMA_ACCESS_ROW_SIZE);
 
     RC rc = RCOK;
 
@@ -283,7 +283,7 @@ RC RDMA_Cicada::remote_read_or_write(yield_func_t &yield, Access * data, TxnMana
 		if (rc == Abort) {
 			operate_size = sizeof(uint64_t);
 		} else {
-			operate_size = row_t::get_row_size(temp_row->tuple_size);
+			operate_size = row_t::get_row_size(ACCESS_ROW_SIZE(temp_row->tuple_size));
 		}
 		txnMng->write_remote_row(yield,loc,operate_size,off, (char *)temp_row,cor_id);
 		mem_allocator.free(temp_row, row_t::get_row_size(ROW_DEFAULT_SIZE));

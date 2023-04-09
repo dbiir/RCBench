@@ -34,10 +34,9 @@ class TxnManager;
 class Row_rdma_mvcc {
 public:
 	void init(row_t * row);
-	RC access(TxnManager * txn, Access *access, access_t type);
+	RC access(yield_func_t &yield, TxnManager * txn, Access *access, access_t type, uint64_t cor_id);
    // RdmaMVHis historyVer[HIS_CHAIN_NUM];
    void local_write_back(TxnManager * txnMng , int num);
-   void local_release_lock(TxnManager * txnMng , int num);
 private:
  	pthread_mutex_t * latch;
 	bool blatch;

@@ -30,29 +30,33 @@
 #define RDMA_SIT SIT_COROUTINE
 #if RDMA_SIT == SIT_TCP
   #define RDMA_ONE_SIDE false
+  #define SKIP_INIT_DONE false
   #define RDMA_TWO_SIDE false
   #define USE_COROUTINE false
   #define USE_DBPAOR false
   #define SERVER_GENERATE_QUERIES false
 #elif RDMA_SIT == SIT_TWO_SIDE
   #define RDMA_ONE_SIDE false
+  #define SKIP_INIT_DONE false
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE false
   #define USE_DBPAOR false
   #define SERVER_GENERATE_QUERIES false
 #elif RDMA_SIT == SIT_ONE_SIDE
   #define RDMA_ONE_SIDE true
+  #define SKIP_INIT_DONE true
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE false
   #define USE_DBPAOR false
   // #if CC_ALG == RDMA_CALVIN
-    #define SERVER_GENERATE_QUERIES false
+    #define SERVER_GENERATE_QUERIES true
   // #else
     // #define SERVER_GENERATE_QUERIES false
   // #endif
 #elif RDMA_SIT == SIT_COROUTINE// || CC_ALG == RDMA_WOUND_WAIT
   #define RDMA_ONE_SIDE true
   #define RDMA_TWO_SIDE true
+  #define SKIP_INIT_DONE true
   #define USE_COROUTINE true
   #define USE_DBPAOR false
   #define SERVER_GENERATE_QUERIES true
@@ -60,10 +64,12 @@
   #define RDMA_ONE_SIDE true
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE false
+  #define SKIP_INIT_DONE true
   #define USE_DBPAOR true
   #define SERVER_GENERATE_QUERIES true
 #elif RDMA_SIT == SIT_ALL
   #define RDMA_ONE_SIDE true
+  #define SKIP_INIT_DONE true
   #define RDMA_TWO_SIDE true
   #define USE_COROUTINE true
   #define USE_DBPAOR true
@@ -103,7 +109,7 @@
 #define SECOND 200 // Set the queue monitoring time.
 // #define THD_ID_QUEUE
 #define ONE_NODE_RECIEVE 0 // only node 0 will receive the txn query
-#define USE_WORK_NUM_THREAD false
+#define USE_WORK_NUM_THREAD true
 #if 1
 // #define LESS_DIS // Reduce the number of yCSB remote data to 1
 // #define LESS_DIS_NUM 0 // Reduce the number of yCSB remote data to 1
@@ -123,18 +129,18 @@
 /***********************************************/
 // Simulation + Hardware
 /***********************************************/
-#define NODE_CNT 6
+#define NODE_CNT 12
 #define THREAD_CNT 24
-#define REM_THREAD_CNT 2
-#define SEND_THREAD_CNT 2
+#define REM_THREAD_CNT 1
+#define SEND_THREAD_CNT 1
 #define COROUTINE_CNT 8
 #define CORE_CNT 2
 // PART_CNT should be at least NODE_CNT
 #define PART_CNT NODE_CNT
 #define CLIENT_NODE_CNT 1
-#define CLIENT_THREAD_CNT 4
-#define CLIENT_REM_THREAD_CNT 2
-#define CLIENT_SEND_THREAD_CNT 2
+#define CLIENT_THREAD_CNT 2
+#define CLIENT_REM_THREAD_CNT 1
+#define CLIENT_SEND_THREAD_CNT 1
 #define CLIENT_RUNTIME false
 
 #define LOAD_METHOD LOAD_MAX
@@ -165,7 +171,7 @@
 #define TIME_ENABLE         true //STATS_ENABLE
 
 #define FIN_BY_TIME true
-#define MAX_TXN_IN_FLIGHT 96
+#define MAX_TXN_IN_FLIGHT 20000
 
 /***********************************************/
 // Memory System
@@ -220,7 +226,7 @@
 //RDMA_NO_WAIT2, RDMA_WAIT_DIE2:no matter read or write, mutex lock is used 
 #define ISOLATION_LEVEL SERIALIZABLE
 
-#define CC_ALG RDMA_SILO
+#define CC_ALG RDMA_MAAT
 
 #define YCSB_ABORT_MODE false
 #define QUEUE_C  APACITY_NEW 1000000
@@ -291,7 +297,7 @@
 
 // [TIMESTAMP]
 #define TS_TWR            false
-#define TS_ALLOC          TS_CAS
+#define TS_ALLOC          TS_CLOCK
 #define TS_BATCH_ALLOC        false
 #define TS_BATCH_NUM        1
 // [MVCC]
@@ -364,10 +370,10 @@
 #define DATA_PERC 100
 #define ACCESS_PERC 0.03
 #define INIT_PARALLELISM 1
-#define SYNTH_TABLE_SIZE 6291456
-#define ZIPF_THETA 0.5
-#define TXN_WRITE_PERC 1
-#define TUP_WRITE_PERC 0.2
+#define SYNTH_TABLE_SIZE 12582912
+#define ZIPF_THETA 0.0
+#define TXN_WRITE_PERC 0.0
+#define TUP_WRITE_PERC 0.0
 #define SCAN_PERC           0
 #define SCAN_LEN          20
 #define PART_PER_TXN 2
@@ -486,6 +492,7 @@ enum PPSTxnType {
 #define DEBUG_TIMESTAMP       false
 #define DEBUG_SYNTH         false
 #define DEBUG_ASSERT        false
+#define DEBUG_TXN false
 #define DEBUG_DISTR false
 #define DEBUG_ALLOC false
 #define DEBUG_RACE false
@@ -612,7 +619,7 @@ enum PPSTxnType {
 #define PROG_TIMER 10 * BILLION // in s
 #define BATCH_TIMER 0
 #define SEQ_BATCH_TIMER 5 * 1 * MILLION // ~5ms -- same as CALVIN paper
-#define DONE_TIMER 1 * 30 * BILLION // ~1 minutes
+#define DONE_TIMER 1 * 60 * BILLION // ~1 minutes
 #define WARMUP_TIMER 1 * 30 * BILLION // ~1 minutes
 
 #define SEED 0

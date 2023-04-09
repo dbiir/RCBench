@@ -218,7 +218,7 @@ bool RDMA_silo::validate_rw_remote(yield_func_t &yield, TxnManager * txn , uint6
 	// row_t * row = txn->txn->accesses[num]->test_row;
 	uint64_t lock = txn->get_txn_id();
 
-//read the row again
+	//read the row again
 	// row_t *temp_row = read_remote_row(txn , num);
     uint64_t target_server = txn->txn->accesses[num]->location;
     uint64_t remote_offset = txn->txn->accesses[num]->offset;
@@ -226,13 +226,16 @@ bool RDMA_silo::validate_rw_remote(yield_func_t &yield, TxnManager * txn , uint6
     row_t *temp_row;
 	RC rc = txn->read_remote_row(yield,target_server,remote_offset,&temp_row,cor_id);
 
-//check whether it was changed by other transaction
-	if(rc == Abort) return false;
+	//check whether it was changed by other transaction
+	if(rc == Abort) {
+		INC_STATS(txn->get_thd_id(), cas_cnt, 1);
+		return false;
+	}
 	if (temp_row->_tid_word != lock && temp_row->_tid_word != 0){
 		succ = false;
 		INC_STATS(txn->get_thd_id(), validate_lock_abort, 1);
 	}
-//if the row has been re-write
+	//if the row has been re-write
 	if(temp_row->timestamp != txn->txn->accesses[num]->timestamp){
 		succ = false;
 	}
@@ -251,32 +254,9 @@ bool RDMA_silo::remote_commit_write(yield_func_t &yield, TxnManager * txnMng , u
 	uint64_t lock = txnMng->get_txn_id();
 	data->_tid_word = lock;
 	data->timestamp = time;
-    uint64_t operate_size = row_t::get_row_size(data->tuple_size) - sizeof(data->_tid_word);
-    // printf("【rdma_silo.cpp:364】table_name = %s, loc = %ld , thd_id = %ld, off = %ld, lock = %ld,operate_size = %ld tuple_size = %ld , sizeof(row_t)=%d\n",data->table_name,loc,thd_id,off,lock,operate_size,data->tuple_size,sizeof(row_t));
-    // char *test_buf = Rdma::get_row_client_memory(thd_id);
-    // memcpy(test_buf, (char*)data + sizeof(data->_tid_word), operate_size);
-
+    uint64_t operate_size = row_t::get_row_size(ACCESS_ROW_SIZE(data->tuple_size)) - sizeof(data->_tid_word);
+	// uint64_t operate_size = row_t::get_row_size(data->tuple_size) - sizeof(data->_tid_word);
     result = txnMng->write_remote_row(yield,loc,operate_size,off,(char*)data + sizeof(data->_tid_word),cor_id);
-
-//async
-	// r2::rdma::SROp op;
-    // op.set_payload(test_buf,operate_size).set_remote_addr(off).set_write();
-
-	// bool runned = false;
-  //   r2::SScheduler ssched;
-
-	// ssched.spawn([&op, &runned,&loc,&thd_id](R2_ASYNC) {
-	// 	auto ret = op.execute(rc_qp[loc][thd_id], IBV_SEND_SIGNALED, R2_ASYNC_WAIT);
-	// 	R2_YIELD;
-	// 	ASSERT(ret == IOCode::Ok);
-	// 	runned = true;
-	// 	R2_STOP();
-	// 	R2_RET;
-	// });
-	// ssched.run();
-	// ASSERT(runned == true);
-//
-
 	return result;
 }
 
@@ -377,6 +357,7 @@ RDMA_silo::finish(yield_func_t &yield, RC rc , TxnManager * txnMng, uint64_t cor
 				remote_access[loc].push_back(num);
 #if USE_DBPAOR == false
 				Access * access = txn->accesses[ num ];
+				assert(access->data->manager != 0);
 				remote_commit_write(yield,txnMng,num,access->data,time,cor_id);
                 uint64_t try_lock;
 				rc = txnMng->cas_remote_content(yield,loc,remote_offset,lock,0,try_lock,cor_id);

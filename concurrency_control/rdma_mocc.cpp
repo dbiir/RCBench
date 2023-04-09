@@ -226,7 +226,7 @@ RC RDMA_mocc::remote_try_lock(yield_func_t &yield,TxnManager * txnMng , uint64_t
 		test_row->lock_type = 1;
 		// printf("lock the key %ld in %ld\n", txn->accesses[num]->orig_row->get_primary_key(),  row_t::get_row_size(test_row->tuple_size));
 		test_row->_tid_word = 0; 
-		assert(txnMng->write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), remote_offset,(char*)test_row, cor_id) == true);
+		txnMng->write_remote_row(yield, loc, row_t::get_row_size(ACCESS_ROW_SIZE(test_row->tuple_size)), remote_offset,(char*)test_row, cor_id);
 		mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 		txnMng->lock_set.insert(txn->accesses[num]->orig_row->get_primary_key());
 		txnMng->num_locks ++;
@@ -240,7 +240,7 @@ RC RDMA_mocc::remote_try_lock(yield_func_t &yield,TxnManager * txnMng , uint64_t
 				if((tts > test_row->ts[i] && test_row->ts[i] != 0)) {
 					test_row->is_hot++;
 					test_row->_tid_word = 0;
-					assert(txnMng->write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), remote_offset,(char*)test_row, cor_id) == true);
+					txnMng->write_remote_row(yield, loc, row_t::get_row_size(ACCESS_ROW_SIZE(test_row->tuple_size)), remote_offset,(char*)test_row, cor_id);
 					mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 					return Abort;
 				}
@@ -252,14 +252,14 @@ RC RDMA_mocc::remote_try_lock(yield_func_t &yield,TxnManager * txnMng , uint64_t
 			//sleep(1);
 			test_row->is_hot++;
 			test_row->_tid_word = 0;
-			assert(txnMng->write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), remote_offset,(char*)test_row, cor_id) == true);
+			txnMng->write_remote_row(yield, loc, row_t::get_row_size(ACCESS_ROW_SIZE(test_row->tuple_size)), remote_offset,(char*)test_row, cor_id);
 			mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 			return Abort;
 		}
 	} else {
 		test_row->_tid_word = 0;
 		test_row->is_hot++;
-		assert(txnMng->write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), remote_offset,(char*)test_row, cor_id) == true);
+		txnMng->write_remote_row(yield, loc, row_t::get_row_size(ACCESS_ROW_SIZE(test_row->tuple_size)), remote_offset,(char*)test_row, cor_id);
 		mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 	}
   	
@@ -346,7 +346,7 @@ mocc_retry_unlock:
         test_row->lock_type = 0;
     }
     test_row->_tid_word = 0;
-	assert(txnMng->write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), remote_offset,(char*)test_row, cor_id) == true);
+	txnMng->write_remote_row(yield, loc, row_t::get_row_size(ACCESS_ROW_SIZE(test_row->tuple_size)), remote_offset,(char*)test_row, cor_id);
 	txnMng->lock_set.erase(txn->accesses[num]->orig_row->get_primary_key());
 	mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 	result = true;

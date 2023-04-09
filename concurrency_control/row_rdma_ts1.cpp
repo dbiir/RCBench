@@ -21,9 +21,10 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 	if(type == RD) {
 		if(ts < temp_row->wts){
 			rc = Abort;
-			// #if DEBUG_PRINTF
-			// printf("[read wts failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
-			// #endif
+			INC_STATS(txn->get_thd_id(),wts_abort1,1);
+			#if DEBUG_PRINTF
+			printf("7[read wts failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu ts%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts,ts);
+			#endif
 			mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			return rc;
 		}
@@ -36,9 +37,10 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 			rc = txn->cas_remote_content(access->location,rts_offset,old_rts,new_rts,cas_result);
 			if(rc == Abort || cas_result!=old_rts){ //cas fail, atomicity violated
 				rc = Abort;
-				// #if DEBUG_PRINTF
-				// printf("[change rts failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
-				// #endif
+				INC_STATS(txn->get_thd_id(),cas_abort1,1);
+				#if DEBUG_PRINTF
+				printf("8[change rts failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu ts:%lu, casresult:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts, ts, cas_result);
+				#endif
 				mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 				return rc;
 			}
@@ -53,6 +55,10 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 			}
 			if(second_row->wts!=temp_row->wts || diff){ //atomicity violated
 				rc = Abort;
+				#if DEBUG_PRINTF
+				printf("9[change rts failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu ts:%lu, secondwts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts, ts, second_row->wts);
+				#endif
+				INC_STATS(txn->get_thd_id(),double_read_abort1,1);
 				mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 				mem_allocator.free(second_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 				return rc;					
@@ -68,9 +74,10 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 	else if(type == WR) {
 		if (ts < temp_row->rts){
 			#if DEBUG_PRINTF
-			printf("[write rts failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
+			printf("10[write rts failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu ts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts,ts);
 			#endif
 			rc = Abort;
+			INC_STATS(txn->get_thd_id(),rts_abort1,1);
 			mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			return rc;
 		}
@@ -88,9 +95,10 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 		rc = txn->cas_remote_content(access->location,mutx_offset,old_mutx,new_mutx,cas_result);
 		if(rc == Abort || cas_result!=old_mutx){ //cas fail, atomicity violated
 			#if DEBUG_PRINTF
-			printf("[lock failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts);
+			printf("11[lock failed]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu ts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts,ts);
 			#endif
 			rc = Abort;
+			INC_STATS(txn->get_thd_id(),lock_abort1,1);
 			mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			return rc;
 		}
@@ -101,6 +109,10 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 		if(ts < temp_row->rts){//atomicity violated
 			rc = Abort;
 			_row->mutx = 0;
+			#if DEBUG_PRINTF
+			printf("12[]txn:%ld, key:%ld, lock:%lu, tid:%lu, rts:%lu, wts:%lu ts:%lu\n",txn->get_txn_id(),_row->get_primary_key(),_row->mutx,_row->tid,_row->rts,_row->wts,ts);
+			#endif
+			INC_STATS(txn->get_thd_id(),rts_abort1,1);
 			mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			mem_allocator.free(second_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			return rc;					
@@ -108,6 +120,7 @@ RC Row_rdma_ts1::access(yield_func_t &yield, TxnManager * txn, Access *access, a
 		if (ts < temp_row->wts) {
 			rc = RCOK;
 			_row->mutx = 0;
+			// INC_STATS(txn->get_thd_id(),rts_abort1,1);
 			mem_allocator.free(temp_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			mem_allocator.free(second_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 			return rc;

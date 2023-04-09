@@ -36,7 +36,7 @@ void RDMA_ts::write_remote(yield_func_t &yield, RC rc, TxnManager * txn, Access 
     uint64_t loc = access->location;
 	uint64_t thd_id = txn->get_thd_id();
 
-	uint64_t operate_size = row_t::get_row_size(access->data->tuple_size);
+	uint64_t operate_size = row_t::get_row_size(ACCESS_ROW_SIZE(access->data->tuple_size));
     if(rc == Abort) 
 		operate_size = sizeof(uint64_t);
 
@@ -79,11 +79,11 @@ void RDMA_ts::commit_write(yield_func_t &yield, TxnManager * txn , uint64_t num 
 	_row->mutx = 0;
 	// memcpy(row, remote_row, row_t::get_row_size(remote_row->tuple_size));
 
-	uint64_t operate_size = row_t::get_row_size(remote_row->tuple_size);
+	uint64_t operate_size = row_t::get_row_size(ACCESS_ROW_SIZE(remote_row->tuple_size));
     txn->write_remote_row(yield,loc,operate_size,offset,(char*)_row,cor_id);
 	// assert(remote_row->mutx != 0);
 	row->free_row();
-	mem_allocator.free(row, row_t::get_row_size(access->data->tuple_size));
+	mem_allocator.free(row, row_t::get_row_size(ACCESS_ROW_SIZE(access->data->tuple_size)));
 	mem_allocator.free(remote_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 }
 

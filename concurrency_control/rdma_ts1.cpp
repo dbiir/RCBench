@@ -38,7 +38,7 @@ void  RDMA_ts1::write_remote(yield_func_t &yield, RC rc, TxnManager * txn, Acces
     uint64_t loc = access->location;
 	uint64_t thd_id = txn->get_thd_id();
 
-	uint64_t operate_size = row_t::get_row_size(access->data->tuple_size);
+	uint64_t operate_size = row_t::get_row_size(ACCESS_ROW_SIZE(access->data->tuple_size));
     if(rc == Abort) 
 		operate_size = sizeof(uint64_t);
 
@@ -88,6 +88,7 @@ RC RDMA_ts1::validate(yield_func_t &yield, TxnManager * txnMng, uint64_t cor_id)
 			}
 			if (state == TS_RUNNING && !simulation->is_done()) goto retry;
 			if (state == TS_ABORTING) {
+				INC_STATS(txnMng->get_thd_id(),ca_abort,1);
 				// printf("[级联回滚]事务号:%ld, 级联事务: %ld\n",txnMng->get_txn_id(),wid);
 				return Abort;
 			} 
@@ -127,9 +128,9 @@ void  RDMA_ts1::commit_write(yield_func_t &yield, TxnManager * txn , uint64_t nu
 			}
 		}
 		remote_row->mutx = 0;
-		memcpy(row, remote_row, row_t::get_row_size(remote_row->tuple_size));
+		memcpy(row, remote_row, row_t::get_row_size(ACCESS_ROW_SIZE(remote_row->tuple_size)));
 		write_remote(yield,RCOK,txn,access,cor_id);
-		mem_allocator.free(row, row_t::get_row_size(access->data->tuple_size));
+		mem_allocator.free(row, row_t::get_row_size(ACCESS_ROW_SIZE(access->data->tuple_size)));
 		mem_allocator.free(remote_row,row_t::get_row_size(ROW_DEFAULT_SIZE));
 	}
 	else if(type == WR){
@@ -155,7 +156,7 @@ void  RDMA_ts1::commit_write(yield_func_t &yield, TxnManager * txn , uint64_t nu
 		}
 		remote_row->mutx = 0;
 
-		memcpy(row, remote_row, row_t::get_row_size(remote_row->tuple_size));
+		memcpy(row, remote_row, row_t::get_row_size(ACCESS_ROW_SIZE(remote_row->tuple_size)));
 		write_remote(yield,RCOK,txn,access,cor_id);
 		// assert(remote_row->mutx != 0);
 
@@ -203,7 +204,7 @@ void  RDMA_ts1::commit_write(yield_func_t &yield, TxnManager * txn , uint64_t nu
 		assert(false);
 	}
 	remote_row->mutx = 0;
-	memcpy(row, remote_row, row_t::get_row_size(remote_row->tuple_size));
+	memcpy(row, remote_row, row_t::get_row_size(ACCESS_ROW_SIZE(remote_row->tuple_size)));
 	write_remote(yield,RCOK,txn,access,cor_id);
 	// assert(remote_row->mutx != 0);
 

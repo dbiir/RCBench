@@ -126,6 +126,18 @@ void Stats_thd::clear() {
   read_retry_cnt=0;
   write_retry_cnt=0;
 
+  wts_abort=0;
+  cas_abort=0;
+  double_read_abort=0;
+  rts_abort=0;
+  lock_abort=0;
+  wts_abort1=0;
+  cas_abort1=0;
+  double_read_abort1=0;
+  rts_abort1=0;
+  lock_abort1=0;
+  ca_abort=0; 
+
   //dslr
   jump_abort = 0;
   deadlock_abort = 0;
@@ -1328,6 +1340,22 @@ void Stats_thd::print(FILE * outf, bool prog) {
           preqlen_over_cnt, lock_retry_cnt, read_retry_cnt,
           write_retry_cnt);
 
+  fprintf(outf,
+          ",wts_abort=%ld"
+          ",cas_abort=%ld"
+          ",double_read_abort=%ld"
+          ",rts_abort=%ld"
+          ",lock_abort=%ld"
+          ",wts_abort1=%ld"
+          ",cas_abort1=%ld"
+          ",double_read_abort1=%ld"
+          ",rts_abort1=%ld"
+          ",lock_abort1=%ld"
+          ",ca_abort=%ld",
+          wts_abort, cas_abort, double_read_abort, rts_abort, lock_abort,
+          wts_abort1, cas_abort1, double_read_abort1, rts_abort1, lock_abort1,
+          ca_abort);
+
     fprintf(outf,
         ",jump_abort = %ld"
         ",deadlock_abort = %ld"
@@ -1497,6 +1525,19 @@ void Stats_thd::combine(Stats_thd * stats) {
   preqlen_over_cnt+=stats->preqlen_over_cnt;
   lock_retry_cnt+=stats->lock_retry_cnt;
   read_retry_cnt+=stats->read_retry_cnt;
+
+  wts_abort+=stats->wts_abort;
+  cas_abort+=stats->cas_abort;
+  double_read_abort+=stats->double_read_abort;
+  rts_abort+=stats->rts_abort;
+  lock_abort+=stats->lock_abort;
+  wts_abort1+=stats->wts_abort1;
+  cas_abort1+=stats->cas_abort1;
+  double_read_abort1+=stats->double_read_abort1;
+  rts_abort1+=stats->rts_abort1;
+  lock_abort1+=stats->lock_abort1;
+  ca_abort+=stats->ca_abort;
+
   write_retry_cnt+=stats->write_retry_cnt;
 
   jump_abort+=stats->jump_abort;

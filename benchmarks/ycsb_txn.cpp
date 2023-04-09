@@ -145,7 +145,7 @@ RC YCSBTxnManager::run_txn(yield_func_t &yield, uint64_t cor_id) {
 	reqId_index.erase(reqId_index.begin(),reqId_index.end());
 	reqId_row.erase(reqId_row.begin(),reqId_row.end());
 #endif
-    if(rc == Abort) total_num_atomic_retry++;
+    // if(rc == Abort) total_num_atomic_retry++;
 	uint64_t curr_time = get_sys_clock();
 	txn_stats.process_time += curr_time - starttime;
 	txn_stats.process_time_short += curr_time - starttime;
@@ -260,7 +260,10 @@ RC YCSBTxnManager::send_remote_one_side_request(yield_func_t &yield, ycsb_reques
 #else
     rc = ycsb_read_remote_index(yield, req, &m_item, cor_id);
 #endif
-	if (rc == Abort || m_item == nullptr) return Abort;
+	if (rc == Abort || m_item == nullptr) {
+		INC_STATS(get_thd_id(), ts_error, 1);
+		return Abort;
+	}
 	uint64_t part_id = _wl->key_to_part( req->key );
     uint64_t loc = GET_NODE_ID(part_id);
 	assert(loc != g_node_id);

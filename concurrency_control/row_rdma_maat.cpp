@@ -93,14 +93,18 @@ RC Row_rdma_maat::read_and_prewrite(TxnManager * txn) {
     }
 #ifdef USE_CAS
 	//while (!ATOM_CAS(_row->_tid_word, 0, 1)) {
+	uint64_t off = (char*)_row - rdma_global_buffer;
+	DEBUG_T("[execution local] MAAT %ld try to lock %ld loc %ld off %ld\n",txn->get_txn_id(),_row->get_primary_key(),g_node_id,off);
     if(!local_cas_lock(txn, 0, txn->get_txn_id() + 1)){
 		// printf("txn %lu abort due to 96\n", txn->get_txn_id());
+		DEBUG_T("[execution remote] MAAT %ld lock %ld loc %ld off %ld fail\n",txn->get_txn_id(),_row->get_primary_key(),g_node_id,off);
 		return Abort;
 	}
+	DEBUG_T("[execution local] MAAT %ld lock %ld loc %ld off %ld success\n",txn->get_txn_id(),_row->get_primary_key(),g_node_id,off);
 #endif
 	INC_STATS(txn->get_thd_id(),mtx[30],get_sys_clock() - mtx_wait_starttime);
 	INC_STATS(txn->get_thd_id(), trans_access_lock_wait_time, get_sys_clock() - mtx_wait_starttime);
-	DEBUG("READ + PREWRITE %ld -- %ld: lw %ld\n", txn->get_txn_id(), _row->get_primary_key(),
+	DEBUG_T("READ + PREWRITE %ld -- %ld: lw %ld\n", txn->get_txn_id(), _row->get_primary_key(),
 			_row->timestamp_last_write);
     
 	// Copy uncommitted writes
@@ -167,11 +171,12 @@ RC Row_rdma_maat::read_and_prewrite(TxnManager * txn) {
 			// txn->uncommitted_writes_y.insert(_row->uncommitted_writes[i]);
 			j++;
 		}
-		DEBUG("    UW %ld -- %ld: %ld\n",txn->get_txn_id(),_row->get_primary_key(),_row->uncommitted_writes[i]);
+		DEBUG_T("    UW %ld -- %ld: %ld\n",txn->get_txn_id(),_row->get_primary_key(),_row->uncommitted_writes[i]);
 	}
 #ifdef USE_CAS
 	//ATOM_CAS(_row->_tid_word,1,0);
 	local_cas_lock(txn, txn->get_txn_id() + 1, 0);
+	DEBUG_T("[execution local] MAAT %ld release lock %ld loc %ld off %ld\n",txn->get_txn_id(),_row->get_primary_key(),g_node_id,off);
 #endif
 
 	return rc;
@@ -195,7 +200,7 @@ RC Row_rdma_maat::read(TxnManager * txn) {
 #endif
 	INC_STATS(txn->get_thd_id(),mtx[30],get_sys_clock() - mtx_wait_starttime);
 	INC_STATS(txn->get_thd_id(), trans_access_lock_wait_time, get_sys_clock() - mtx_wait_starttime);
-	DEBUG("READ %ld -- %ld: lw %ld\n", txn->get_txn_id(), _row->get_primary_key(),
+	DEBUG_T("READ %ld -- %ld: lw %ld\n", txn->get_txn_id(), _row->get_primary_key(),
 			_row->timestamp_last_write);
 
 	// Copy uncommitted writes
@@ -340,16 +345,22 @@ RC Row_rdma_maat::abort(yield_func_t &yield, access_t type, TxnManager * txn, ui
 	uint64_t loc = g_node_id;
 	uint64_t thd_id = txn->get_thd_id();
 	uint64_t lock = txn->get_txn_id() + 1;
-	if (txn->loop_cas_remote(yield,loc,off,0,lock,cor_id) == Abort) {
+	// if (txn->loop_cas_remote(yield,loc,off,0,lock,cor_id) == Abort) {
+	// 	return Abort;
+	// }
+	DEBUG_T("[Abort local] MAAT try lock %ld: %ld off %ld\n",txn->get_txn_id(),_row->get_primary_key(),off);
+	if (txn->loop_cas_remote(loc,off,0,lock) == Abort) {
+		DEBUG_T("[Abort local] MAAT lock %ld: %ld off %ld fail\n",txn->get_txn_id(),_row->get_primary_key(),off);
 		return Abort;
 	}
+	DEBUG_T("[Abort local] MAAT lock %ld: %ld off %ld success\n",txn->get_txn_id(),_row->get_primary_key(),off);
 	// while(!simulation->is_done() && txn->cas_remote_content(yield, loc,off,0,lock, cor_id)== Abort) {
 	// // local_cas_lock(txn, 0, txn->get_txn_id() + 1)){
 	// 	total_num_atomic_retry++;
 	// }
 #endif
 	INC_STATS(txn->get_thd_id(),mtx[32],get_sys_clock() - mtx_wait_starttime);
-	DEBUG("Maat Abort %ld: %d -- %ld\n",txn->get_txn_id(),type,_row->get_primary_key());
+	DEBUG_T("Maat local Abort %ld: %d -- %ld\n",txn->get_txn_id(),type,_row->get_primary_key());
 #if WORKLOAD == TPCC
 		ucread_erase(txn->get_txn_id());
 		ucwrite_erase(txn->get_txn_id());
@@ -368,6 +379,7 @@ RC Row_rdma_maat::abort(yield_func_t &yield, access_t type, TxnManager * txn, ui
 	//ATOM_CAS(_row->_tid_word,1,0);
 	// local_cas_lock(txn, txn->get_txn_id() + 1, 0);
 	_row->_tid_word = 0;
+	DEBUG_T("[Abort local] MAAT release lock %ld: %ld off %ld success\n",txn->get_txn_id(),_row->get_primary_key(),off);
 #endif
 	return Abort;
 }
@@ -381,16 +393,22 @@ RC Row_rdma_maat::commit(yield_func_t &yield, access_t type, TxnManager * txn, r
 	uint64_t loc = g_node_id;
 	uint64_t thd_id = txn->get_thd_id();
 	uint64_t lock = txn->get_txn_id() + 1;
-	if (txn->loop_cas_remote(yield,loc,off,0,lock,cor_id) == Abort) {
+	// if (txn->loop_cas_remote(yield,loc,off,0,lock,cor_id) == Abort) {
+	// 	return Abort;
+	// }
+	DEBUG_T("[Commit local] MAAT try to lock %ld: %ld off %ld\n",txn->get_txn_id(),_row->get_primary_key(),off);
+	if (txn->loop_cas_remote(loc,off,0,lock) == Abort) {
+		DEBUG_T("[Commit local] MAAT lock %ld: %ld off %ld fail\n",txn->get_txn_id(),_row->get_primary_key(),off);
 		return Abort;
 	}
+	DEBUG_T("[Commit local] MAAT lock %ld: %ld off %ld success\n",txn->get_txn_id(),_row->get_primary_key(),off);
 	// while(!simulation->is_done() && txn->cas_remote_content(yield, loc,off,0,lock, cor_id)== Abort) {
 	// // local_cas_lock(txn, 0, txn->get_txn_id() + 1)){
 	// 	total_num_atomic_retry++;
 	// }
 #endif
 	INC_STATS(txn->get_thd_id(),mtx[33],get_sys_clock() - mtx_wait_starttime);
-	DEBUG("Maat Commit %ld: %d,%lu -- %ld\n", txn->get_txn_id(), type, txn->get_commit_timestamp(),
+	DEBUG_T("Maat local Commit %ld: %d,%lu -- %ld\n", txn->get_txn_id(), type, txn->get_commit_timestamp(),
 			_row->get_primary_key());
 
 	uint64_t txn_commit_ts = txn->get_commit_timestamp();
@@ -526,6 +544,7 @@ RC Row_rdma_maat::commit(yield_func_t &yield, access_t type, TxnManager * txn, r
 	//ATOM_CAS(_row->_tid_word,1,0);
 	// local_cas_lock(txn, txn->get_txn_id() + 1, 0);
 	_row->_tid_word = 0;
+	DEBUG_T("[Commit local] MAAT release lock %ld: %ld off %ld\n",txn->get_txn_id(),_row->get_primary_key(),off);
 #endif
 	 return rc;
 }

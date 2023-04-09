@@ -99,11 +99,25 @@ public:
   uint64_t txn_write_cnt;
   uint64_t record_write_cnt;
 
-//RDMA_TS
+  //RDMA_TS
   uint64_t preqlen_over_cnt;
   uint64_t lock_retry_cnt;
   uint64_t read_retry_cnt;
   uint64_t write_retry_cnt;
+
+  //RDMA_TS1
+  uint64_t wts_abort;
+  uint64_t cas_abort;
+  uint64_t double_read_abort;
+  uint64_t rts_abort;
+  uint64_t lock_abort;
+  uint64_t wts_abort1;
+  uint64_t cas_abort1;
+  uint64_t double_read_abort1;
+  uint64_t rts_abort1;
+  uint64_t lock_abort1;
+
+  uint64_t ca_abort; 
 
   //dslr
   uint64_t jump_abort;

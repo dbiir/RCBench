@@ -376,7 +376,7 @@ RC row_t::get_lock(access_t type, TxnManager * txn) {
 RC row_t::remote_copy_row(row_t* remote_row, TxnManager * txn, Access *access) {
   RC rc = RCOK;
   uint64_t init_time = get_sys_clock();
-  uint64_t size = (uint64_t)remote_row->tuple_size < ROW_DEFAULT_SIZE ? row_t::get_row_size(remote_row->tuple_size) : row_t::get_row_size(ROW_DEFAULT_SIZE);
+  uint64_t size = (uint64_t)remote_row->tuple_size < RDMA_ACCESS_ROW_SIZE ? row_t::get_row_size(remote_row->tuple_size) : row_t::get_row_size(RDMA_ACCESS_ROW_SIZE);
   txn->cur_row = (row_t *) mem_allocator.alloc(size);
   INC_STATS(txn->get_thd_id(), trans_cur_row_init_time, get_sys_clock() - init_time);
   
@@ -477,7 +477,7 @@ RC row_t::get_row(yield_func_t &yield,access_t type, TxnManager *txn, Access *ac
 
 #if CC_ALG == TICTOC
 		DEBUG_M("row_t::get_row TICTOC alloc \n");
-	// txn->cur_row = (row_t *) mem_allocator.alloc(row_t::get_row_size(ROW_DEFAULT_SIZE));
+	// txn->cur_row = (row_t *) mem_allocator.alloc(row_t::get_row_size(RDMA_ACCESS_ROW_SIZE));
 	// txn->cur_row->init(get_table(), get_part_id());
 		// rc = this->manager->access(type,txn);
 		// txn->cur_row->copy(this);
@@ -736,7 +736,7 @@ RC row_t::get_row(yield_func_t &yield,access_t type, TxnManager *txn, Access *ac
    // rc = this->manager->access(txn, type, txn->cur_row);
    txn->cur_row = (row_t *) mem_allocator.alloc(row_t::get_row_size(tuple_size));
    txn->cur_row->init(get_table(), get_part_id());
-   rc = this->manager->access(txn, access, type);
+   rc = this->manager->access(yield, txn, access, type, cor_id);
 
    access->data = txn->cur_row;
 #elif CC_ALG == HSTORE || CC_ALG == HSTORE_SPEC || CC_ALG == CALVIN || CC_ALG == RDMA_CALVIN

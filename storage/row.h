@@ -21,8 +21,9 @@
 #include "global.h"
 #include "routine.h"
 
-// #define ROW_DEFAULT_SIZE 1000
-#define ROW_DEFAULT_SIZE 0
+#define ROW_DEFAULT_SIZE 1000
+// #define RDMA_ACCESS_ROW_SIZE 1000
+#define RDMA_ACCESS_ROW_SIZE 0
 #include "row_rdma_cicada.h"
 
 
@@ -33,6 +34,7 @@
 
 #define DECL_GET_VALUE(type) void get_value(int col_id, type &value);
 
+#define ACCESS_ROW_SIZE(tuple_size) {RDMA_ACCESS_ROW_SIZE<tuple_size?RDMA_ACCESS_ROW_SIZE:tuple_size}
 /*
 #define GET_VALUE(type)\
 	void row_t::get_value(int col_id, type & value) {\
@@ -85,7 +87,7 @@ struct RdmaMVHis {
     uint64_t end_ts;
     uint64_t txn_id;
     //RTS、start_ts、end_ts、txn-id：
-	char data[ROW_DEFAULT_SIZE];
+	char data[RDMA_ACCESS_ROW_SIZE];
 };
 
 #if CC_ALG == RDMA_TS

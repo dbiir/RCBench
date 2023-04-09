@@ -44,7 +44,7 @@ RC RDMA_Maat::validate(yield_func_t &yield, TxnManager * txn, uint64_t cor_id) {
 
 	uint64_t lower = rdma_txn_table.local_get_lower(txn->get_txn_id());
 	uint64_t upper = rdma_txn_table.local_get_upper(txn->get_txn_id());
-	DEBUG("MAAT Validate Start %ld: [%lu,%lu]\n",txn->get_txn_id(),lower,upper);
+	DEBUG_T("MAAT Validate Start %ld: [%lu,%lu]\n",txn->get_txn_id(),lower,upper);
 	std::set<uint64_t> after;
 	std::set<uint64_t> before;
 	// lower bound of txn greater than write timestamp
@@ -72,6 +72,7 @@ RC RDMA_Maat::validate(yield_func_t &yield, TxnManager * txn, uint64_t cor_id) {
 				}
 			}
 		} else {
+			DEBUG_T("MAAT Validate %ld remote UW txn %ld\n",txn->get_txn_id(),*it);
 			RdmaTxnTableNode* item = rdma_txn_table.remote_get_timeNode(yield, txn, *it, cor_id);
 			if (!rdma_txn_table.remote_is_key(item, *it))continue;
 			auto it_lower = rdma_txn_table.remote_get_lower(item, *it);
@@ -117,6 +118,7 @@ RC RDMA_Maat::validate(yield_func_t &yield, TxnManager * txn, uint64_t cor_id) {
 				}
 			}
 		} else {
+			DEBUG_T("MAAT Validate %ld remote UR txn %ld\n",txn->get_txn_id(),*it);
 			RdmaTxnTableNode* item = rdma_txn_table.remote_get_timeNode(yield, txn, *it, cor_id);
 			if (!rdma_txn_table.remote_is_key(item, *it))continue;
 			auto it_upper = rdma_txn_table.remote_get_upper(item, *it);
@@ -160,6 +162,7 @@ RC RDMA_Maat::validate(yield_func_t &yield, TxnManager * txn, uint64_t cor_id) {
 				after.insert(*it);
 			}
 		} else {
+			DEBUG_T("MAAT Validate %ld remote UW2 txn %ld\n",txn->get_txn_id(),*it);
 			RdmaTxnTableNode* item = rdma_txn_table.remote_get_timeNode(yield, txn, *it, cor_id);
 			if (!rdma_txn_table.remote_is_key(item, *it))continue;
 			auto it_upper = rdma_txn_table.remote_get_upper(item, *it);
@@ -264,6 +267,7 @@ RC RDMA_Maat::validate(yield_func_t &yield, TxnManager * txn, uint64_t cor_id) {
 						rdma_txn_table.remote_set_upper(item, *it, lower);
 					}
 					if(*it != 0) {
+						DEBUG_T("MAAT Validate %ld remote write txn %ld\n",txn->get_txn_id(),*it);
 						rdma_txn_table.remote_set_timeNode(yield, txn, *it, item, cor_id);
 					}
 				}
@@ -344,6 +348,7 @@ RC RDMA_Maat::validate(yield_func_t &yield, TxnManager * txn, uint64_t cor_id) {
 						// item->lower = upper;
 					}
 					if(*it != 0) {
+						DEBUG_T("MAAT Validate %ld remote write txn %ld\n",txn->get_txn_id(),*it);
 						rdma_txn_table.remote_set_timeNode(yield, txn, *it, item, cor_id);
 					}
 				}
@@ -363,7 +368,7 @@ end:
 	INC_STATS(txn->get_thd_id(),maat_validate_time,timespan);
 	txn->txn_stats.cc_time += timespan;
 	txn->txn_stats.cc_time_short += timespan;
-	DEBUG("MAAT Validate End %ld: %d [%lu,%lu]\n",txn->get_txn_id(),rc==RCOK,lower,upper);
+	DEBUG_T("MAAT Validate End %ld: %d [%lu,%lu]\n",txn->get_txn_id(),rc==RCOK,lower,upper);
 	//printf("MAAT Validate End %ld: %d [%lu,%lu]\n",txn->get_txn_id(),rc==RCOK,lower,upper);
 	// sem_post(&_semaphore);
 	// rc = RCOK;
@@ -395,14 +400,16 @@ RC
 RDMA_Maat::finish(yield_func_t &yield, RC rc , TxnManager * txnMng, uint64_t cor_id)
 {
 	Transaction *txn = txnMng->txn;
-	
+	DEBUG_T("[Finish] Maat start %s %ld has %ld access\n", rc == Abort?"abort":"commit", txnMng->get_txn_id(),txnMng->get_access_cnt());
 	if (rc == Abort) {
 		for (uint64_t i = 0; i < txnMng->get_access_cnt(); i++) {
 			//local
 			if(txn->accesses[i]->location == g_node_id){
+				Access * access = txn->accesses[i];
 				rc = txn->accesses[i]->orig_row->manager->abort(yield, txn->accesses[i]->type,txnMng,cor_id);
 			} else{
 			//remote
+				Access * access = txn->accesses[i];
 				rc = remote_abort(yield, txnMng, txn->accesses[i], cor_id);
 
 			}
@@ -415,13 +422,11 @@ RDMA_Maat::finish(yield_func_t &yield, RC rc , TxnManager * txnMng, uint64_t cor
 			//local
 			if(txn->accesses[i]->location == g_node_id){
 				Access * access = txn->accesses[i];
-				
 				//access->orig_row->manager->write( access->data);
 				rc = txn->accesses[i]->orig_row->manager->commit(yield, txn->accesses[i]->type, txnMng, access->data, cor_id);
 			}else{
 			//remote
 				Access * access = txn->accesses[i];
-				//DEBUG("commit access txn %ld, off: %ld loc: %ld and key: %ld\n",txnMng->get_txn_id(), access->offset, access->location, access->data->get_primary_key());
 				rc =  remote_commit(yield, txnMng, txn->accesses[i], cor_id);
 			}
 			// DEBUG("silo %ld abort release row %ld \n", txnMng->get_txn_id(), txn->accesses[ txnMng->write_set[i] ]->orig_row->get_primary_key());
@@ -441,6 +446,7 @@ RDMA_Maat::finish(yield_func_t &yield, RC rc , TxnManager * txnMng, uint64_t cor
 		txn->accesses[i]->offset = 0;
 		}
 	}
+	DEBUG_T("[Finish] maat %s %ld complete\n",rc == Abort?"abort":"commit", txnMng->get_txn_id());
 	//memset(txnMng->write_set, 0, 100);
 	return rc;
 }
@@ -449,14 +455,15 @@ RC RDMA_Maat::remote_abort(yield_func_t &yield, TxnManager * txnMng, Access * da
 	RC rc = RCOK;
 	uint64_t mtx_wait_starttime = get_sys_clock();
 	INC_STATS(txnMng->get_thd_id(),mtx[32],get_sys_clock() - mtx_wait_starttime);
-	DEBUG("Maat Abort %ld: %d -- %ld\n",txnMng->get_txn_id(), data->type, data->data->get_primary_key());
+	
 	Transaction * txn = txnMng->txn;
 	uint64_t off = data->offset;
 	uint64_t loc = data->location;
 	uint64_t thd_id = txnMng->get_thd_id();
 	uint64_t lock = txnMng->get_txn_id() + 1;
 	uint64_t operate_size = row_t::get_row_size(ROW_DEFAULT_SIZE);
-	
+	DEBUG_T("[Abort remote] Maat %ld: %ld loc-off %ld:%ld\n",txnMng->get_txn_id(), data->data->get_primary_key(),loc,off);
+
 #if USE_DBPAOR == true
 	uint64_t try_lock;
 	row_t * temp_row;
@@ -467,15 +474,18 @@ RC RDMA_Maat::remote_abort(yield_func_t &yield, TxnManager * txnMng, Access * da
 	while(try_lock != 0 && !simulation->is_done());
 #else
 	uint64_t try_lock ;
+	DEBUG_T("[Abort remote] Maat try to lock %ld: %ld loc-off %ld:%ld\n",txnMng->get_txn_id(), data->data->get_primary_key(),loc,off);
 	do {
 		rc = txnMng->cas_remote_content(yield, loc,off,0,lock,try_lock,cor_id);
 		if (rc == Abort) return Abort;
 		total_num_atomic_retry++;
 	} while(try_lock != 0 && !simulation->is_done());
+	DEBUG_T("[Abort remote] Maat lock %ld: %ld loc-off %ld:%ld\n",txnMng->get_txn_id(), data->data->get_primary_key(),loc,off);
     row_t *temp_row;
 	rc = txnMng->read_remote_row(yield, loc,off, &temp_row, cor_id);
 #endif
-	if(temp_row->get_primary_key() != data->data->get_primary_key()) return Abort;
+	if (rc == Abort) return Abort;
+	// if(temp_row->get_primary_key() != data->data->get_primary_key()) return Abort;
 	// else if (temp_row->get_primary_key() != data->data->get_primary_key()) assert(false);
 
     char *tmp_buf2 = Rdma::get_row_client_memory(thd_id);
@@ -496,8 +506,9 @@ RC RDMA_Maat::remote_abort(yield_func_t &yield, TxnManager * txnMng, Access * da
 		}
         
 		temp_row->_tid_word = 0;
-        operate_size = row_t::get_row_size(temp_row->tuple_size);
+        operate_size = row_t::get_row_size(ACCESS_ROW_SIZE(temp_row->tuple_size));
 		// memcpy(tmp_buf2, (char *)temp_row, operate_size);
+		if (WORKLOAD != TPCC)
         txnMng->write_remote_row(yield, loc,operate_size,off,(char *)temp_row, cor_id);
 	}
 
@@ -513,8 +524,9 @@ RC RDMA_Maat::remote_abort(yield_func_t &yield, TxnManager * txnMng, Access * da
 			}
 		} 
 		temp_row->_tid_word = 0;
-        operate_size = row_t::get_row_size(temp_row->tuple_size);
+        operate_size = row_t::get_row_size(ACCESS_ROW_SIZE(temp_row->tuple_size));
 		// memcpy(tmp_buf2, (char *)temp_row, operate_size);
+		DEBUG_T("[Abort remote] Maat release lock %ld: %ld loc-off %ld:%ld\n",txnMng->get_txn_id(), data->data->get_primary_key(),loc,off);
         txnMng->write_remote_row(yield,loc,operate_size,off,(char *)temp_row, cor_id);
 		//uncommitted_writes->erase(txn->get_txn_id());
 	}
@@ -525,8 +537,7 @@ RC RDMA_Maat::remote_abort(yield_func_t &yield, TxnManager * txnMng, Access * da
 RC RDMA_Maat::remote_commit(yield_func_t &yield, TxnManager * txnMng, Access * data, uint64_t cor_id) {
 	uint64_t mtx_wait_starttime = get_sys_clock();
 	INC_STATS(txnMng->get_thd_id(),mtx[33],get_sys_clock() - mtx_wait_starttime);
-	DEBUG("Maat Commit %ld: %d,%lu -- %ld\n", txnMng->get_txn_id(), data->type, txnMng->get_commit_timestamp(),
-			data->data->get_primary_key());
+	
 	Transaction * txn = txnMng->txn;
 	uint64_t off = data->offset;
 	uint64_t loc = data->location;
@@ -535,6 +546,7 @@ RC RDMA_Maat::remote_commit(yield_func_t &yield, TxnManager * txnMng, Access * d
 	uint64_t operate_size = row_t::get_row_size(ROW_DEFAULT_SIZE);
 	uint64_t key;
 	RC rc = RCOK;
+	DEBUG_T("[Commit remote] Maat %ld: %ld loc-off %ld:%ld\n",txnMng->get_txn_id(), data->data->get_primary_key(),loc,off);
 #if USE_DBPAOR == true
 	uint64_t try_lock;
 	row_t * temp_row;
@@ -545,15 +557,18 @@ RC RDMA_Maat::remote_commit(yield_func_t &yield, TxnManager * txnMng, Access * d
 	while(try_lock != 0 && !simulation->is_done());
 #else
 	uint64_t try_lock ;
+	DEBUG_T("[Commit remote] Maat try to lock %ld: %ld loc-off %ld:%ld\n",txnMng->get_txn_id(), data->data->get_primary_key(),loc,off);
 	do {
 		rc = txnMng->cas_remote_content(yield, loc,off,0,lock,try_lock,cor_id);
 		if (rc == Abort) return Abort;
 		total_num_atomic_retry++;
 	} while(try_lock != 0 && !simulation->is_done());
+	DEBUG_T("[Commit remote] Maat lock %ld: %ld loc-off %ld:%ld\n",txnMng->get_txn_id(), data->data->get_primary_key(),loc,off);
     row_t *temp_row;
 	rc = txnMng->read_remote_row(yield, loc,off, &temp_row, cor_id);
 #endif
-	if (rc == Abort || temp_row->get_primary_key() != data->data->get_primary_key()) return Abort;
+	if (rc == Abort)// || temp_row->get_primary_key() != data->data->get_primary_key()) 
+	return Abort;
 
     char *tmp_buf2 = Rdma::get_row_client_memory(thd_id);
 	uint64_t txn_commit_ts = txnMng->get_commit_timestamp();
@@ -622,9 +637,9 @@ RC RDMA_Maat::remote_commit(yield_func_t &yield, TxnManager * txnMng, Access * d
 			}
 		#endif
 		temp_row->_tid_word = 0;
-        operate_size = row_t::get_row_size(temp_row->tuple_size);
+        operate_size = row_t::get_row_size(ACCESS_ROW_SIZE(temp_row->tuple_size));
 		// memcpy(tmp_buf2, (char *)temp_row, operate_size);
-        txnMng->write_remote_row(yield,loc,operate_size,off, (char *)temp_row, cor_id);
+		if (WORKLOAD != TPCC) txnMng->write_remote_row(yield,loc,operate_size,off, (char *)temp_row, cor_id);
 	}
 
 	if(data->type == WR || WORKLOAD == TPCC) {
@@ -734,9 +749,10 @@ RC RDMA_Maat::remote_commit(yield_func_t &yield, TxnManager * txnMng, Access * d
 			}
 		#endif
 		temp_row->_tid_word = 0;
-        operate_size = row_t::get_row_size(temp_row->tuple_size);
+        operate_size = row_t::get_row_size(ACCESS_ROW_SIZE(temp_row->tuple_size));
 		// memcpy(tmp_buf2, (char *)temp_row, operate_size);
 		txnMng->write_remote_row(yield,loc,operate_size,off,(char *)temp_row, cor_id);
+		DEBUG_T("[Commit remote] Maat release lock %ld: %ld loc-off %ld:%ld\n",txnMng->get_txn_id(), data->data->get_primary_key(),loc,off);
 		//uncommitted_writes->erase(txn->get_txn_id());
 	}
 	mem_allocator.free(temp_row, row_t::get_row_size(ROW_DEFAULT_SIZE));

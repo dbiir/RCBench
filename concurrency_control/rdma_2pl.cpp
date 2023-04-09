@@ -90,7 +90,7 @@ retry_remote_unlock:
         test_row->lock_type = 0;
     }
     test_row->_tid_word = 0;
-    txnMng->write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), off,(char*)test_row, cor_id);
+    txnMng->write_remote_row(yield, loc, row_t::get_row_size(ACCESS_ROW_SIZE(test_row->tuple_size)), off,(char*)test_row, cor_id);
 	mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 #else
     Access *access = txnMng->txn->accesses[num];
@@ -103,7 +103,7 @@ retry_remote_unlock:
 
     //just unlock, not write back when ABORT 
     uint64_t operate_size = 0;
-    if(rc != Abort) operate_size = row_t::get_row_size(data->tuple_size);
+    if(rc != Abort) operate_size = row_t::get_row_size(ACCESS_ROW_SIZE(data->tuple_size));
     else operate_size = sizeof(uint64_t);
 
     // char *test_buf = Rdma::get_row_client_memory(thd_id);
@@ -286,7 +286,7 @@ retry_remote_unlock:
         test_row->lock_type = 0;
     }
     test_row->_tid_word = 0;
-    txnMng->write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), off,(char*)test_row, cor_id);
+    txnMng->write_remote_row(yield, loc, row_t::get_row_size(ACCESS_ROW_SIZE(test_row->tuple_size)), off,(char*)test_row, cor_id);
 	mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));	
 #elif CC_ALG == RDMA_NO_WAIT2 ||  CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == RDMA_WOUND_WAIT2
     Access *access = txnMng->txn->accesses[num];
