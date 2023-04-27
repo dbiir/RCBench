@@ -1253,7 +1253,7 @@ void PrepareMessage::copy_to_txn(TxnManager * txn) {
 #if RDMA_ONE_SIDED_RW && !RDMA_ONE_SIDED_VA
   for (int i = 0; i < accesses.size(); i++) {
     accesses[i]->to_two_sided_local();
-    DEBUG_M("Txn %ld add access key %ld location %ld offset %ld orig_row %p\n", txn->txn->txn_id, accesses[i]->key,accesses[i]->location,accesses[i]->offset,accesses[i]->orig_row);
+    DEBUG_T("Txn %ld add access type %ld key %ld location %ld offset %ld orig_row %p\n", txn->txn->txn_id, accesses[i]->type, accesses[i]->key,accesses[i]->location,accesses[i]->offset,accesses[i]->orig_row);
     if (accesses[i]->type == WR) txn->txn->write_cnt ++;
 
     #if CC_ALG == RDMA_CICADA
@@ -1772,18 +1772,18 @@ uint64_t FinishMessage::get_size() {
   size += sizeof(uint64_t);
 #endif
 #if !RDMA_ONE_SIDED_CO && RDMA_ONE_SIDED_RW// && RDMA_ONE_SIDED_VA
-  size += sizeof(uint64_t);
   #if CC_ALG == RDMA_CICADA
     assert(set_first.size() == set_second.size());
     size += sizeof(size_t);
     size += sizeof(uint64_t) * 2 * set_first.size();
-  #else
+  #endif
     size_t asize = 0;
+    size += sizeof(uint64_t);
     for(uint64_t i = 0; i < accesses.size(); i++) {
       if (accesses[i]->location == dest_node) asize++;
     }
     size += Access::get_size() * asize;
-  #endif
+  // #endif
 #endif
   return size;
 }
@@ -1809,8 +1809,9 @@ void FinishMessage::copy_from_txn(TxnManager * txn) {
   for (unordered_map<uint64_t, uint64_t>::iterator i=txn->uncommitted_set.begin(); i!=txn->uncommitted_set.end(); i++) {
     set_first.add(i->first);
     set_second.add(i->second);
+    DEBUG_C("txn %ld uncommitted set put %ld:%ld\n",txn->get_txn_id(),i->first, i->second);
   }
-#else 
+#endif
   accesses.clear();
   accesses.init(txn->txn->accesses.size());
   // accesses.copy(txn->txn->accesses);
@@ -1824,7 +1825,7 @@ void FinishMessage::copy_from_txn(TxnManager * txn) {
     DEBUG_C("txn %ld finish msg copy %ld access key %ld\n",txn->get_txn_id(),i,access->key);
   }
   dest_node = UINT64_MAX; // init to max;
-#endif
+// #endif
 
 #endif
 }
@@ -1847,7 +1848,9 @@ void FinishMessage::copy_to_txn(TxnManager * txn) {
   assert(set_first.size() == set_second.size());
   for (int i = 0; i < set_first.size(); i++) {
     txn->uncommitted_set.insert(std::make_pair(set_first[i], set_second[i]));
-#else 
+    DEBUG_C("txn %ld uncommitted set insert %ld:%ld\n",txn->get_txn_id(),set_first[i], set_second[i]);
+  }
+#endif 
   for (int i = 0; i < accesses.size();i++) {
     accesses[i]->to_two_sided_local();
     bool insert = true;
@@ -1861,9 +1864,8 @@ void FinishMessage::copy_to_txn(TxnManager * txn) {
       if (accesses[i]->type == WR) txn->txn->write_cnt ++;
       accesses.set(i,nullptr);
     }
-#endif
-
   }
+// #endif
 #endif
 }
 
@@ -1891,7 +1893,7 @@ void FinishMessage::copy_from_buf(char * buf) {
     COPY_VAL(item,buf,ptr);
     set_second.add(item);
   }
-#else
+#endif
   size_t asize = 0;
   COPY_VAL(asize,buf,ptr);
   accesses.init(asize);
@@ -1901,10 +1903,9 @@ void FinishMessage::copy_from_buf(char * buf) {
     access->copy_from_buf(buf,ptr);
     accesses.add(access);
   }
+// #endif
 #endif
-
-#endif
-  uint64_t size = get_size();
+  // uint64_t size = get_size();
   assert(ptr == get_size());
 }
 
@@ -1931,7 +1932,7 @@ void FinishMessage::copy_to_buf(char * buf) {
     item = set_second[i];
     COPY_BUF(buf,item,ptr);
   }
-#else
+#endif
   size_t asize = 0;
   for(uint64_t i = 0; i < accesses.size(); i++) {
     if (accesses[i]->location == dest_node) asize++;
@@ -1946,9 +1947,10 @@ void FinishMessage::copy_to_buf(char * buf) {
     }
   }
   // DEBUG_C("finish msg copy %ld access\n",asize);
+// #endif
 #endif
-#endif
-  assert(ptr == get_size());
+  size_t total_size = get_size();
+  assert(ptr == total_size);
   assert(ptr <= g_msg_size && get_size() <= g_msg_size);
   
 }

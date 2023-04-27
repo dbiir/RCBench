@@ -104,7 +104,7 @@ RC Row_lock::lock_get(lock_t type, TxnManager * txn, uint64_t* &txnids, int &txn
             //      T should abort
             //////////////////////////////////////////////////////////
 
-      //bool canwait = txn->get_timestamp() > max_owner_ts;
+            //bool canwait = txn->get_timestamp() > max_owner_ts;
             bool canwait = true;
             LockEntry * en;
             for(uint64_t i = 0; i < owners_size; i++) {

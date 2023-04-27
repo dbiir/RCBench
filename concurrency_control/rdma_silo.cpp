@@ -38,7 +38,7 @@ RC RDMA_silo::validate_rdma_silo(yield_func_t &yield, TxnManager * txnMng, uint6
 	RC rc = RCOK;
 	// lock write tuples in the primary key order.
 	uint64_t wr_cnt = txn->write_cnt;
-	DEBUG_C("silo txn %ld start validation\n", txn->txn_id);
+	DEBUG_C("silo txn %ld start validation wr_cnt %ld row_cnt %ld\n", txn->txn_id, wr_cnt, txn->row_cnt);
 	int cur_wr_idx = 0;
   	//int read_set[10];
 	int read_set[txn->row_cnt - txn->write_cnt];
@@ -95,6 +95,8 @@ RC RDMA_silo::validate_rdma_silo(yield_func_t &yield, TxnManager * txnMng, uint6
 	txnMng->num_locks = 0;
 	for (uint64_t i = 0; i < wr_cnt; i++) {
 		int retry_count = 0;
+		done = false;
+		DEBUG_C("silo try to lock the %d loc %ld key %ld\n", txnMng->get_txn_id(), txn->accesses[ txnMng->write_set[i]]->location, txn->accesses[ txnMng->write_set[i]]->key);
 		while (!done && !simulation->is_done()) {
 			if(txn->accesses[txnMng->write_set[i]]->location == g_node_id){//lock in local
 				row_t * row = txn->accesses[ txnMng->write_set[i] ]->orig_row;
@@ -264,19 +266,19 @@ bool RDMA_silo::remote_commit_write(yield_func_t &yield, TxnManager * txnMng , u
 	bool result = false;
 	Transaction *txn = txnMng->txn;
 
-    uint64_t off = txn->accesses[num]->offset + sizeof(data->_tid_word);
+    // uint64_t off = txn->accesses[num]->offset;
+	uint64_t off = txn->accesses[num]->offset + sizeof(data->_tid_word);
     uint64_t loc = txn->accesses[num]->location;
 	uint64_t thd_id = txnMng->get_thd_id() + cor_id * g_thread_cnt;
 	uint64_t lock = txnMng->get_txn_id();
-	data->_tid_word = lock;
+	data->_tid_word = 0;
 	data->timestamp = time;
-    uint64_t operate_size = row_t::get_row_size(data->tuple_size) - sizeof(data->_tid_word);
+    // uint64_t operate_size = row_t::get_row_size(data->tuple_size);
+	uint64_t operate_size = row_t::get_row_size(data->tuple_size) - sizeof(data->_tid_word);
     DEBUG_C("【rdma_silo.cpp:272】silo txn %ld write data, loc = %ld, key = %ld  lock = %ld\n",txnMng->get_txn_id(),loc,txn->accesses[num]->key,lock);
-	// printf("【rdma_silo.cpp:364】table_name = %s, loc = %ld , thd_id = %ld, off = %ld, lock = %ld,operate_size = %ld tuple_size = %ld , sizeof(row_t)=%d\n",data->table_name,loc,thd_id,off,lock,operate_size,data->tuple_size,sizeof(row_t));
-    // char *test_buf = Rdma::get_row_client_memory(thd_id);
-    // memcpy(test_buf, (char*)data + sizeof(data->_tid_word), operate_size);
 	assert(data != 0 && data->manager != 0);
-    result = txnMng->write_remote_row(yield,loc,operate_size,off,(char*)data + sizeof(data->_tid_word),cor_id);
+    // result = txnMng->write_remote_row(yield,loc,operate_size,off,(char*)data,cor_id);
+	result = txnMng->write_remote_row(yield,loc,operate_size,off,(char*)data + sizeof(data->_tid_word),cor_id);
 
 	return result;
 }

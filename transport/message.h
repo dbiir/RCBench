@@ -119,9 +119,8 @@ public:
   #if CC_ALG == RDMA_CICADA
     Array<uint64_t> set_first;
     Array<uint64_t> set_second;
-  #else 
+  #endif 
     Array<Access*> accesses;
-  #endif
 #endif
 };
 

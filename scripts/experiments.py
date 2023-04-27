@@ -201,7 +201,7 @@ def ycsb_two_sided_size():
     # length = [20]
     length = [20,50,100,250,500,750,1000]
     #skew = [0.0,0.5,0.9]
-    sit = 0
+    sit = 1
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","SYNTH_TABLE_SIZE","RDMA_ONE_CNT","RDMA_SIDED_LENGTH","RDMA_SIT",
     "REQ_PER_QUERY","TUP_WRITE_PERC","TXN_WRITE_PERC","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT","CLIENT_THREAD_CNT","SEND_THREAD_CNT","REM_THREAD_CNT","CLIENT_SEND_THREAD_CNT","CLIENT_REM_THREAD_CNT"]
     exp = [[wl,n,algo,base_table_size*n,onecnt,sidedlength,sit,2,tup_wr_perc,txn_wr_perc,ld,sk,thr,cthr,sthr,rthr,sthr,rthr] for thr,cthr,sthr,rthr,txn_wr_perc,tup_wr_perc,sk,ld,n,algo,onecnt,sidedlength in itertools.product(tcnt,ctcnt,scnt,rcnt,txn_write_perc,tup_write_perc,skew,load,nnodes,algos,ocnt,length)]
@@ -217,22 +217,25 @@ def ycsb_hg():
     # algos=['RDMA_WAIT_DIE2']
     # algos=['RDMA_WOUND_WAIT2']
     # algos=['RDMA_MVCC']
-    algos=['RDMA_CICADA']
+    # algos=['RDMA_CICADA']
     # algos=['RDMA_SILO']
     # algos=['RDMA_MAAT_H']
+    algos=['RDMA_TS1']
     base_table_size=1048576*4
     txn_write_perc = [1]
     tup_write_perc = [0.2]
-    load = [16]
-    tcnt = [4]
+    load = [96]
+    tcnt = [24]
     # tcnt = [36]
     ctcnt = [2]
-    scnt = [1]
+    scnt = [1] 
     rcnt = [1]
     skew = [0.2]
+    # hgid = [4]
     # hgid = [6]
-    hgid = [1]
-    # hgid = [4,5] #for 2pl
+    # hgid = [1,2,3]
+    # hgid = [1,2,3,4,5,6]
+    hgid = [5] #for 2pl
     sit = 6
     fmt = ["WORKLOAD","NODE_CNT","CC_ALG","SYNTH_TABLE_SIZE","HG_ID","RDMA_SIT",
     "REQ_PER_QUERY","TUP_WRITE_PERC","TXN_WRITE_PERC","MAX_TXN_IN_FLIGHT","ZIPF_THETA","THREAD_CNT","CLIENT_THREAD_CNT","SEND_THREAD_CNT","REM_THREAD_CNT","CLIENT_SEND_THREAD_CNT","CLIENT_REM_THREAD_CNT"]
@@ -401,8 +404,9 @@ def ycsb_scaling_tcp():
     # base_table_size=2097152*8
     txn_write_perc = [1]
     tup_write_perc = [0.2]
-    load = [10000]
-    tcnt = [24]
+    # load = [10000]
+    load = [144]
+    tcnt = [36]
     ctcnt = [2]
     scnt = [1]
     rcnt = [1]
@@ -1566,8 +1570,8 @@ configs = {
     "ONLY_ONE_HOME": 'false',
     "NO_PHYSICAL": 'false',
     "NETWORK_DELAY_TEST": 'false',
-    "DONE_TIMER": "1 * 60 * BILLION // ~1 minutes",
-    "WARMUP_TIMER": "1 * 60 * BILLION // ~1 minutes",
+    "DONE_TIMER": "1 * 20 * BILLION // ~1 minutes",
+    "WARMUP_TIMER": "1 * 10 * BILLION // ~1 minutes",
     "SEQ_BATCH_TIMER": "5 * 1 * MILLION // ~5ms -- same as CALVIN paper",
     "BATCH_TIMER" : "0",
     "PROG_TIMER" : "10 * BILLION // in s",

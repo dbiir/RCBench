@@ -184,7 +184,7 @@ void TxnTable::release_transaction_manager(uint64_t thd_id, uint64_t txn_id, uin
 
   txn_node_t t_node = pool[pool_id]->head;
 
-#if CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3
+#if CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3  || CC_ALG == RDMA_MVCC 
   uint64_t min_ts = UINT64_MAX;
   txn_node_t saved_t_node = NULL;
 #endif
@@ -194,7 +194,7 @@ void TxnTable::release_transaction_manager(uint64_t thd_id, uint64_t txn_id, uin
     if(is_matching_txn_node(t_node,txn_id,batch_id)) {
       LIST_REMOVE_HT(t_node,pool[txn_id % pool_size]->head,pool[txn_id % pool_size]->tail);
       --pool[pool_id]->cnt;
-#if CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3
+#if CC_ALG == MVCC || CC_ALG == WOOKONG || CC_ALG == DTA || CC_ALG == DLI_DTA || CC_ALG == DLI_DTA2 || CC_ALG == DLI_DTA3  || CC_ALG == RDMA_MVCC 
     saved_t_node = t_node;
     t_node = t_node->next;
     continue;

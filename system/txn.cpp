@@ -1110,9 +1110,9 @@ void TxnManager::cleanup(yield_func_t &yield, RC rc, uint64_t cor_id) {
 	ts_t starttime = get_sys_clock();
 	uint64_t row_cnt = txn->accesses.get_count();
 	assert(txn->accesses.get_count() == txn->row_cnt);
-	if (WORKLOAD == YCSB && row_cnt <= g_req_per_query) {
-		printf("row_cnt: %ld.\n", row_cnt);
-	}
+	// if (WORKLOAD == YCSB && row_cnt <= g_req_per_query) {
+	// 	// printf("row_cnt: %ld.\n", row_cnt);
+	// }
 	assert((WORKLOAD == YCSB && row_cnt <= g_req_per_query) || (WORKLOAD == TPCC && row_cnt <= g_max_items_per_txn*2 + 3));
 
 	DEBUG_T("Cleanup %ld %ld %d\n",get_txn_id(),row_cnt, rc);
@@ -1305,8 +1305,10 @@ RC TxnManager::get_row(yield_func_t &yield,row_t * row, access_t type, row_t *& 
 	}
 	access->type = type;
 	access->orig_row = row; //access->data == access->orig_row
+#if RDMA_ONE_SIDE
 	access->key = row->get_primary_key();
 	access->location = g_node_id;
+#endif
 #if CC_ALG == RDMA_CICADA
 	access->version = version_num[version_num.size()-1];
 #endif
@@ -1365,10 +1367,10 @@ RC TxnManager::get_row(yield_func_t &yield,row_t * row, access_t type, row_t *& 
 	++txn->row_cnt;
 	if (type == WR) ++txn->write_cnt;
 	txn->accesses.add(access);
-	DEBUG_C("TxnManager %ld enter access key %ld 1 \n", txn->txn_id, access->key);
-	for (int i = 0; i < txn->accesses.size(); i++) {
-		DEBUG_C("TxnManager %ld access %ld data %p pointer %p-%p key %ld version: %lu g_node_id %ld\n", txn->txn_id, i,txn->accesses[i]->data, txn->accesses[i], txn->accesses[i]->orig_row, txn->accesses[i]->key, txn->accesses[i]->version, txn->accesses[i]->location);
-	}
+	// DEBUG_C("TxnManager %ld enter access key %ld 1 \n", txn->txn_id, access->key);
+	// for (int i = 0; i < txn->accesses.size(); i++) {
+	// 	DEBUG_C("TxnManager %ld access %ld data %p pointer %p-%p key %ld version: %lu g_node_id %ld\n", txn->txn_id, i,txn->accesses[i]->data, txn->accesses[i], txn->accesses[i]->orig_row, txn->accesses[i]->key, txn->accesses[i]->version, txn->accesses[i]->location);
+	// }
 #endif
    	// DEBUG_T("txn %ld access orig_row %p, key %ld\n",txn->txn_id,access->orig_row,access->orig_row->get_primary_key());
 	timespan = get_sys_clock() - starttime;
@@ -1425,13 +1427,13 @@ RC TxnManager::get_row_post_wait(row_t *& row_rtn) {
 #endif
 
 	txn->accesses.add(access);
-	DEBUG_C("TxnManager %ld enter access key %ld 3\n", txn->txn_id, access->key);
-	if (access->orig_row == nullptr) {
-		DEBUG_C("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 1426");
-	}
-	for (int i = 0; i < txn->accesses.size(); i++) {
-		DEBUG_C("TxnManager %ld access %ld key %ld 3\n", txn->txn_id, i, txn->accesses[i]->key);
-	}
+	// DEBUG_C("TxnManager %ld enter access key %ld 3\n", txn->txn_id, access->key);
+	// if (access->orig_row == nullptr) {
+	// 	DEBUG_C("xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx 1426");
+	// }
+	// for (int i = 0; i < txn->accesses.size(); i++) {
+	// 	DEBUG_C("TxnManager %ld access %ld key %ld 3\n", txn->txn_id, i, txn->accesses[i]->key);
+	// }
 	uint64_t timespan = get_sys_clock() - starttime;
 	INC_STATS(get_thd_id(), txn_manager_time, timespan);
 	this->last_row_rtn  = access->data;
@@ -2056,7 +2058,7 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 				row_local = NULL;
 				txn->rc = Abort;
 				mem_allocator.free(m_item, sizeof(itemid_t));
-
+				mem_allocator.free(test_row, row_t::get_row_size(ROW_DEFAULT_SIZE));
 				return Abort;
 			}
 			DEBUG_C("---线程号：%ld, 远程加锁成功，锁位置: %u; %ld , 事务号: %ld, 原lock_info: %ld, new_lock_info: %ld\n", get_thd_id(), loc, test_row->get_primary_key(), txn->txn_id, test_row->_tid_word, 1);
@@ -2251,6 +2253,10 @@ RC TxnManager::get_remote_row(yield_func_t &yield, access_t type, uint64_t loc, 
 				test_row->_tid_word = 0;
 				assert(write_remote_row(yield, loc, row_t::get_row_size(test_row->tuple_size), m_item->offset,(char*)test_row, cor_id) == true);
 			} else if(lock_type == 1 || type == WR) {
+				// 可能的情况
+				// 当前是写操作，本地已经被加了读/写锁
+				// 当前是读操作，本地已经被加了写锁
+				// 这三种情况，均需要检查是wait，还是wound
 				uint64_t i = 0; 
 				for(i = 0; i < LOCK_LENGTH; i++) {
 					if((tts > test_row->ts[i] && test_row->ts[i] != 0)) {

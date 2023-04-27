@@ -309,7 +309,10 @@ RDMA_Cicada::finish(yield_func_t &yield, RC rc , TxnManager * txnMng, uint64_t c
 					break;
 				}
 			}
-			assert(count != -1);
+			if (count == -1) {
+				assert(i->first % g_node_cnt != g_node_id);
+				continue;
+			}
 			if(txn->accesses[count]->location == g_node_id){
 				rc = txn->accesses[count]->orig_row->manager->abort(i->second,txnMng);
 			} else if (txnMng->rdma_co_one_sided()) {
@@ -375,7 +378,7 @@ RDMA_Cicada::finish(yield_func_t &yield, RC rc , TxnManager * txnMng, uint64_t c
 		vector<vector<uint64_t>> remote_access(g_node_cnt);
 		vector<vector<uint64_t>> remote_num(g_node_cnt);
 		for (unordered_map<uint64_t, uint64_t>::iterator i=txnMng->uncommitted_set.begin(); i!=txnMng->uncommitted_set.end(); i++) {
-			// printf("commit%d:%d\n", i->first, i->second);
+			DEBUG_C("txn %ld commit %d:%d\n", txnMng->get_txn_id(), i->first, i->second);
 			int count = -1;
 			for (int cnt = 0; cnt < txn->accesses.size(); cnt++) {
 				if (txn->accesses[cnt]->key == i->first) {
@@ -383,7 +386,11 @@ RDMA_Cicada::finish(yield_func_t &yield, RC rc , TxnManager * txnMng, uint64_t c
 					break;
 				}
 			}
-			assert(count != -1);
+			if (count == -1) {
+				assert(i->first % g_node_cnt != g_node_id);
+				continue;
+			}
+			// assert(count != -1);
 			if(txn->accesses[count]->location == g_node_id){
 				// Access * access = txn->accesses[i->first];
 				rc = txn->accesses[count]->orig_row->manager->commit(i->second, txnMng, txn->accesses[count]->data);

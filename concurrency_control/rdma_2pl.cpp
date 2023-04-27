@@ -405,21 +405,21 @@ void RDMA_2pl::finish(yield_func_t &yield,RC rc, TxnManager * txnMng,uint64_t co
     INC_STATS(txnMng->get_thd_id(),twopl_release_cnt,1);
     
 
-    // for (uint64_t i = 0; i < txn->row_cnt; i++) {
-    //     if(txn->accesses[i]->location != g_node_id){
-    //     //remote
-    //     mem_allocator.free(txn->accesses[i]->data,0);
-    //     mem_allocator.free(txn->accesses[i]->orig_row,0);
-    //     // mem_allocator.free(txn->accesses[i]->test_row,0);
-    //     txn->accesses[i]->data = NULL;
-    //     txn->accesses[i]->orig_row = NULL;
-    //     txn->accesses[i]->orig_data = NULL;
-    //     txn->accesses[i]->version = 0;
+    for (uint64_t i = 0; i < txn->row_cnt; i++) {
+        if(txn->accesses[i]->location != g_node_id){
+            //remote
+            if (txn->accesses[i]->data)  mem_allocator.free(txn->accesses[i]->data,0);
+            if (txn->accesses[i]->orig_row)  mem_allocator.free(txn->accesses[i]->orig_row,0);
+            // mem_allocator.free(txn->accesses[i]->test_row,0);
+            txn->accesses[i]->data = NULL;
+            txn->accesses[i]->orig_row = NULL;
+            txn->accesses[i]->orig_data = NULL;
+            txn->accesses[i]->version = 0;
 
-    //     //txn->accesses[i]->test_row = NULL;
-    //     txn->accesses[i]->offset = 0;
-    //     }
-    // }
+            //txn->accesses[i]->test_row = NULL;
+            txn->accesses[i]->offset = 0;
+        }
+    }
 	memset(txnMng->write_set, 0, 100);
 
 }

@@ -123,7 +123,7 @@
 // Simulation + Hardware
 /***********************************************/
 #define NODE_CNT 4
-#define THREAD_CNT 4
+#define THREAD_CNT 24
 #define REM_THREAD_CNT 1
 #define SEND_THREAD_CNT 1
 #define COROUTINE_CNT 8
@@ -164,7 +164,7 @@
 #define TIME_ENABLE         true //STATS_ENABLE
 
 #define FIN_BY_TIME true
-#define MAX_TXN_IN_FLIGHT 16
+#define MAX_TXN_IN_FLIGHT 96
 
 /***********************************************/
 // Memory System
@@ -219,7 +219,7 @@
 //RDMA_NO_WAIT2, RDMA_WAIT_DIE2:no matter read or write, mutex lock is used 
 #define ISOLATION_LEVEL SERIALIZABLE
 
-#define CC_ALG RDMA_CICADA
+#define CC_ALG RDMA_TS1
 
 #define YCSB_ABORT_MODE false
 #define QUEUE_C  APACITY_NEW 1000000
@@ -374,8 +374,8 @@
 //    HOT: use ACCESS_PERC of the accesses go to DATA_PERC of the data
 /************RDMA (one vs two) sided verbs*/
 #define RDMA_SIDED_EXP true
-#define RDMA_SIDED_LENGTH 20
-#define RDMA_ONE_CNT 5
+#define RDMA_SIDED_LENGTH 500
+#define RDMA_ONE_CNT 1
 #if RDMA_SIDED_EXP
 #define PART_PER_TXN 2
 #define REQ_PER_QUERY 10
@@ -593,8 +593,8 @@ enum PPSTxnType {
 #define RDMA_MAAT_H 47
 #define RDMA_NO_WAIT_H 48
 // hg
-#define HG_ID 1
-#if HG_ID == 0
+#define HG_ID 5
+#if HG_ID == 0 || !RDMA_ONE_SIDE
 #define RDMA_ONE_SIDED_RW false
 #define RDMA_ONE_SIDED_VA false
 #define RDMA_ONE_SIDED_CO false
@@ -674,8 +674,8 @@ enum PPSTxnType {
 #define PROG_TIMER 10 * BILLION // in s
 #define BATCH_TIMER 0
 #define SEQ_BATCH_TIMER 5 * 1 * MILLION // ~5ms -- same as CALVIN paper
-#define DONE_TIMER 1 * 60 * BILLION // ~1 minutes
-#define WARMUP_TIMER 1 * 60 * BILLION // ~1 minutes
+#define DONE_TIMER 1 * 20 * BILLION // ~1 minutes
+#define WARMUP_TIMER 1 * 10 * BILLION // ~1 minutes
 
 #define SEED 0
 #define SHMEM_ENV false
