@@ -8,11 +8,6 @@ RCBench consists of a set of distributed transactions that are executed on a set
 The contributions of this paper include: (1) the proposal of an RDMA-native primitive that facilitates the convenient implementation of RDMA-enabled concurrency control algorithms; (2) the development of a set of distributed transactions that involve a large number of data nodes and are designed to test the scalability of various concurrency control algorithms; (3) the performance evaluation of mainstream concurrency control algorithms using RCBench; and (4) the demonstration of the effectiveness of the proposed optimization principles for improving the scalability of concurrency control algorithms in RCBench.
 
 Overall, RCBench provides a valuable tool for the community to evaluate the performance and scalability of various concurrency control algorithms, and it can be used to test and compare the effectiveness of different approaches for solving the weak transaction scalability problem.
-
-RCBench is atop of the opensourced distributed framework Deneva, whose study can be found in the following paper:
-
-    Rachael Harding, Dana Van Aken, Andrew Pavlo, and Michael Stonebraker. 2017.
-    An Evaluation of Distributed Concurrency Control. PVLDB 10, 5 (2017), 553–564.
     
 
 Dependencies
