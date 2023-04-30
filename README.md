@@ -48,3 +48,7 @@ To test the impact of contention level, run the following command:
 - `cd scripts`
 - `python run_experiments.py -e -c vcloud ycsb_skew`
 
+### the impact of read-write ratio
+To test the impact of read-write ratio, run the following command:
+- `cd scripts`
+- `python run_experiments.py -e -c vcloud ycsb_write`
