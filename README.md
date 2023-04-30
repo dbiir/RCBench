@@ -8,6 +8,8 @@ RCBench consists of a set of distributed transactions that are executed on a set
 The contributions of this paper include: (1) the proposal of an RDMA-native primitive that facilitates the convenient implementation of RDMA-enabled concurrency control algorithms; (2) the development of a set of distributed transactions that involve a large number of data nodes and are designed to test the scalability of various concurrency control algorithms; (3) the performance evaluation of mainstream concurrency control algorithms using RCBench; and (4) the demonstration of the effectiveness of the proposed optimization principles for improving the scalability of concurrency control algorithms in RCBench.
 
 Overall, RCBench provides a valuable tool for the community to evaluate the performance and scalability of various concurrency control algorithms, and it can be used to test and compare the effectiveness of different approaches for solving the weak transaction scalability problem.
+
+To illustrate the detailed re-implementation methods, we place the complete descriptions of re-implementations, including Wait-Die, Wound-Wait, MVCC, MaaT, and Cicada, in the technical report https://github.com/dbiir/RCBench/blob/master/RCBench.pdf.
     
 
 Dependencies
@@ -22,7 +24,7 @@ To ensure that the code works properly, the server needs to have the following d
 
 Build
 --------------
-- `git clone https://github.com/rhaaaa123/RCBench.git`
+- `git clone https://github.com/dbiir/RCBench.git`
 - `make clean`
 - `make deps`
 - `make -j16`
