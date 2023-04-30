@@ -33,8 +33,18 @@ In `scripts\run_config.py`, the `vcloud_uname` and `vcloud_machines` need to be 
 
 Run
 -------------
+### Transaction scalbility
+To test the transaction scalbility, run the following command:
+- `cd scripts`
+- `python run_experiments.py -e -c vcloud ycsb_partitions`
+
+### System scalbility
+To test the system scalbility, run the following command:
 - `cd scripts`
 - `python run_experiments.py -e -c vcloud ycsb_scaling`
 
-
+### The impact of contention level
+To test the impact of contention level, run the following command:
+- `cd scripts`
+- `python run_experiments.py -e -c vcloud ycsb_skew`
 
