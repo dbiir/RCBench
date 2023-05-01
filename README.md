@@ -11,6 +11,8 @@ Overall, RCBench provides a valuable tool for the community to evaluate the perf
 
 To illustrate the detailed re-implementation methods, we place the complete descriptions of re-implementations, including Wait-Die, Wound-Wait, MVCC, MaaT, and Cicada, in the technical report https://github.com/dbiir/RCBench/blob/master/RCBench.pdf.
     
+The most recent code of each algorithms is in branch rdma-4.9
+The hybird approach is in branch RCBench-hg
 
 Dependencies
 ------------
@@ -54,3 +56,4 @@ To test the impact of contention level, run the following command:
 To test the impact of read-write ratio, run the following command:
 - `cd scripts`
 - `python run_experiments.py -e -c vcloud ycsb_write`
+
