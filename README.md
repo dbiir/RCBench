@@ -11,7 +11,8 @@ Overall, RCBench provides a valuable tool for the community to evaluate the perf
 
 To illustrate the detailed re-implementation methods, we place the complete descriptions of re-implementations, including Wait-Die, Wound-Wait, MVCC, MaaT, and Cicada, in the technical report https://github.com/dbiir/RCBench/blob/master/RCBench.pdf.
     
-The most recent code of each algorithms is in branch rdma-4.9
+The most recent code of each algorithms is in branch rdma-4.9.
+
 The hybird approach is in branch RCBench-hg
 
 Dependencies
