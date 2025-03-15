@@ -55,9 +55,11 @@
 #include "wkdb.h"
 #include "tictoc.h"
 #include "rdma_silo.h"
+#include "rdma_si.h"
 #include "rdma_mocc.h"
 #include "rdma_mvcc.h"
 #include "rdma_2pl.h"
+#include "rdma_redt.h"
 #include "rdma_maat.h"
 #include "rdma_ts1.h"
 #include "rdma_ts.h"
@@ -103,8 +105,13 @@ Cicada cicada_man;
 Tictoc tictoc_man;
 Transport tport_man;
 Rdma rdma_man;
+#if CC_ALG == RDMA_RED_T
+RDMA_redt rredt_man; 
+#endif
 #if CC_ALG == RDMA_SILO
 RDMA_silo rsilo_man;
+#elif CC_ALG == RDMA_SI
+RDMA_si rsi_man; 
 #elif CC_ALG == RDMA_MOCC
 RDMA_mocc rmocc_man;
 #elif CC_ALG == RDMA_MVCC

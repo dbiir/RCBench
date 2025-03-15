@@ -270,7 +270,7 @@ public:
 	void release_locks(yield_func_t &yield, RC rc, uint64_t cor_id);
 
 	bool rdma_one_side() {
-		if (CC_ALG == RDMA_SILO || CC_ALG == RDMA_MVCC || CC_ALG == RDMA_NO_WAIT || CC_ALG == RDMA_NO_WAIT2 || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == RDMA_MAAT || CC_ALG ==RDMA_TS1 ||CC_ALG ==RDMA_TS || CC_ALG == RDMA_CICADA || CC_ALG == RDMA_CNULL || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_DSLR_NO_WAIT || CC_ALG == RDMA_MOCC) return true;
+		if (CC_ALG == RDMA_SILO || CC_ALG == RDMA_MVCC || CC_ALG == RDMA_NO_WAIT || CC_ALG == RDMA_NO_WAIT2 || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == RDMA_MAAT || CC_ALG ==RDMA_TS1 ||CC_ALG ==RDMA_TS || CC_ALG == RDMA_CICADA || CC_ALG == RDMA_CNULL || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT || CC_ALG == RDMA_DSLR_NO_WAIT || CC_ALG == RDMA_MOCC|| CC_ALG == RDMA_SI || CC_ALG == RDMA_RED_T) return true;
 		else return false;
 	}
 
@@ -339,6 +339,12 @@ public:
     bool loop_cas_remote(yield_func_t &yield,uint64_t target_server,uint64_t remote_offset,uint64_t old_value,uint64_t new_value, uint64_t cor_id);
 
 
+	// For HLC
+	RC read_remote_content(yield_func_t &yield, uint64_t target_server, uint64_t remote_offset, uint64_t operate_size, char* local_buf, uint64_t cor_id);
+	RC get_hlc_ts(yield_func_t &yield, uint64_t cor_id);
+	RC update_hlc_ts(yield_func_t &yield, uint64_t cts, uint64_t cor_id);
+	RC update_remote_ts(yield_func_t &yield, uint64_t target_server, uint64_t cts, uint64_t cor_id);
+
 	bool isRecon() {
 		assert(CC_ALG == CALVIN || CC_ALG == RDMA_CALVIN || !recon);
 		return recon;
@@ -392,7 +398,14 @@ public:
     int*            read_set;
 	int				num_atomic_retry; //num of txn atomic_retry
 #endif
+#if CC_ALG == RDMA_SI || CC_ALG == RDMA_RED_T
+	int             write_set[100];
+    int*            read_set;
+	int				num_atomic_retry; //num of txn atomic_retry
+	int				num_locks;
 
+	bool			enable_read_only_optimization;
+#endif
 #if CC_ALG == RDMA_TS1
 	int             write_set[100];
 #endif

@@ -205,7 +205,7 @@ for exp in exps:
 
     tcnt = []
     for e in experiments:
-        tcnt.append(e[-2])
+        tcnt.append(e[-6])
     tcnt = sorted(list(set(tcnt)))
 
     cocnt = []
@@ -262,6 +262,11 @@ for exp in exps:
         hg.append(e[4])
     hg = sorted(list(set(hg)))
 
+    version_array = []
+    for e in experiments:
+        version_array.append(e[4])
+    version_array = sorted(list(set(version_array)))
+
     cmd = ''
     os.chdir('./scripts')
     if exp == 'ycsb_skew' or exp == 'ycsb_skew1':
@@ -304,6 +309,8 @@ for exp in exps:
         cmd='sh result.sh -a ycsb_partitions -n {} -c {} -t {} -P {}'.format(str(cn[0]), ','.join([str(x) for x in al]), strnow, ','.join([str(x) for x in part]))
     elif 'ycsb_coroutine' in exp:
         cmd='sh result.sh -a ycsb_coroutine -n {} -c {} -t {} -CO {}'.format(str(cn[0]), ','.join([str(x) for x in al]), strnow, ','.join([str(x) for x in cocnt]))
+    elif 'ycsb_version_array' in exp:
+        cmd='sh result-version.sh -a ycsb_version_array -n {} -c {} -t {} --VA {} -s {}'.format(str(cn[0]), ','.join([str(x) for x in al]), strnow, ','.join([str(x) for x in version_array]), ','.join([str(x) for x in sk]))
     print cmd
     os.system(cmd)
     print cmd

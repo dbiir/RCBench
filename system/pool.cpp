@@ -307,6 +307,10 @@ void AccessPool::get(uint64_t thd_id, Access *& item) {
   #if CC_ALG == RDMA_SILO || CC_ALG == RDMA_MVCC || CC_ALG == RDMA_MOCC
   item->tid = 0;
   #endif
+  #if CC_ALG == RDMA_SI
+  item->location = g_node_id;
+  item->offset = 0;
+  #endif
 }
 
 void AccessPool::put(uint64_t thd_id, Access * item) {

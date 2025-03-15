@@ -151,6 +151,10 @@ RC YCSBTxnManager::run_txn(yield_func_t &yield, uint64_t cor_id) {
 	txn_stats.process_time_short += curr_time - starttime;
 	txn_stats.wait_starttime = get_sys_clock();
 //RDMA_SILO:logic?
+	#if TEST_HLC
+    // ! 增加测试HLC的部分
+    get_hlc_ts(yield,cor_id);
+    #endif
 	if(IS_LOCAL(get_txn_id())) {  //for one-side rdma, must be local
 		if(is_done() && rc == RCOK) {
 			// printf("a txn is done\n");
@@ -268,6 +272,10 @@ RC YCSBTxnManager::send_remote_one_side_request(yield_func_t &yield, ycsb_reques
 
 	rc = get_remote_row(yield, req->acctype, loc, m_item, row_local, cor_id);
 	// mem_allocator.free(m_item, sizeof(itemid_t));
+	#if TEST_HLC
+	// ! 增加测试HLC的部分
+	update_remote_ts(yield,loc,0,cor_id);
+	#endif
 	return rc;
 }
 

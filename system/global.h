@@ -82,8 +82,13 @@ class Wkdb;
 class Tictoc;
 class Transport;
 class Rdma;
+#if CC_ALG == RDMA_RED_T 
+class RDMA_redt;
+#endif
 #if CC_ALG == RDMA_SILO
 class RDMA_silo;
+#elif CC_ALG == RDMA_SI
+class RDMA_si;
 #elif CC_ALG == RDMA_MOCC
 class RDMA_mocc;
 #elif CC_ALG == RDMA_MVCC
@@ -180,6 +185,12 @@ extern RDMA_silo rsilo_man;
 extern RDMA_mocc rmocc_man;
 #elif CC_ALG == RDMA_MVCC
 extern rdma_mvcc rmvcc_man;
+#endif
+#if CC_ALG == RDMA_SI
+extern RDMA_si rsi_man;
+#endif
+#if CC_ALG == RDMA_RED_T
+extern RDMA_redt rredt_man;
 #endif
 #if CC_ALG == RDMA_NO_WAIT || CC_ALG == RDMA_NO_WAIT2 || CC_ALG == RDMA_WAIT_DIE2 || CC_ALG == RDMA_WOUND_WAIT2 || CC_ALG == RDMA_WAIT_DIE || CC_ALG == RDMA_WOUND_WAIT
 extern RDMA_2pl r2pl_man;

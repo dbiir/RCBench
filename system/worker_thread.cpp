@@ -1386,6 +1386,10 @@ RC WorkerThread::process_rtxn( yield_func_t &yield, Message * msg, uint64_t cor_
 #if CC_ALG == WSI || CC_ALG == SSI
     txn_table.update_min_ts(get_thd_id(),txn_id,0,txn_man->get_start_timestamp());
 #endif
+  #if TEST_HLC
+  // ! 增加测试HLC的部分
+  txn_man->get_hlc_ts(yield,cor_id);
+  #endif
 #if CC_ALG == MAAT
   #if WORKLOAD==DA
   if(da_start_stamp_tab.count(txn_man->get_txn_id())==0)

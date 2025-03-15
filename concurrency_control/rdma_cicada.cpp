@@ -124,51 +124,51 @@ RC RDMA_Cicada::validate(yield_func_t &yield, TxnManager * txnMng, uint64_t cor_
         } else {}
     }
 	// 3.	对读集中的每一项
-	if(rc == RCOK)
-	for (uint64_t j = 0; j < txn->row_cnt - txn->write_cnt; j++) {
-        //local
-        if(txn->accesses[read_set[j]]->location == g_node_id){
-            access = txn->accesses[ read_set[j] ];
-			// access->orig_row->manager->local_cas_lock(txnMng, 0, txnMng->get_txn_id());
-			if (access->orig_row->manager->local_cas_lock(txnMng, 0, txnMng->get_txn_id()) == false) {
-				INC_STATS(txnMng->get_thd_id(), cicada_case3_cnt, 1);
-				DEBUG_C("Read Abort 1\n");
-				return Abort;
-			}
-            for(int cnt = access->orig_row->version_cnt ; cnt >= access->orig_row->version_cnt - HIS_CHAIN_NUM && cnt >= 0; cnt--) {
-				int i = cnt % HIS_CHAIN_NUM;
-				if(access->orig_row->cicada_version[i].state == Cicada_ABORTED) {
-					continue;
-				}
-				if(access->orig_row->cicada_version[i].Wts > txnMng->get_timestamp()) {
-					continue;
-				}
-				// printf("version:%d : num:%d: cor_id:%ld\n", access->orig_row->cicada_version[i].key, txnMng->version_num[read_set[i]], cor_id);
-				if(access->orig_row->cicada_version[i].key == txnMng->version_num[read_set[j]]) {
-					rc = RCOK;
-					if(access->orig_row->cicada_version[i].Rts < txnMng->get_timestamp())
-						access->orig_row->cicada_version[i].Rts = txnMng->get_timestamp();
-					break;
-				} else {
-					rc = Abort;
-					INC_STATS(txnMng->get_thd_id(), cicada_case3_cnt, 1);
-					// printf("Abort 6\n");
-					DEBUG_C("TXN %ld read access->orig_row->cicada_version[%d].key:%ld, txnMng->version_num[%d] :%ld, row_state: %d.\n", txnMng->get_txn_id(), i, access->orig_row->cicada_version[i].key, read_set[j], txnMng->version_num[read_set[j]], access->orig_row->cicada_version[i].state);
-					DEBUG_C("Read Abort 2\n");
-					break;
-				}
-			}
-			access->orig_row->_tid_word = 0;
-			// access->orig_row->manager->local_cas_lock(txnMng, txnMng->get_txn_id(), 0);
-        } else if (txnMng->rdma_va_one_sided()) {
-        //remote
-            access = txn->accesses[ read_set[j] ];
-            rc = remote_read_or_write(yield, access, txnMng, read_set[j], true, cor_id);
-			if (rc == Abort) INC_STATS(txnMng->get_thd_id(), cicada_case4_cnt, 1);
-        } else {
+	// if(rc == RCOK)
+	// for (uint64_t j = 0; j < txn->row_cnt - txn->write_cnt; j++) {
+    //     //local
+    //     if(txn->accesses[read_set[j]]->location == g_node_id){
+    //         access = txn->accesses[ read_set[j] ];
+	// 		// access->orig_row->manager->local_cas_lock(txnMng, 0, txnMng->get_txn_id());
+	// 		if (access->orig_row->manager->local_cas_lock(txnMng, 0, txnMng->get_txn_id()) == false) {
+	// 			INC_STATS(txnMng->get_thd_id(), cicada_case3_cnt, 1);
+	// 			DEBUG_C("Read Abort 1\n");
+	// 			return Abort;
+	// 		}
+    //         for(int cnt = access->orig_row->version_cnt ; cnt >= access->orig_row->version_cnt - HIS_CHAIN_NUM && cnt >= 0; cnt--) {
+	// 			int i = cnt % HIS_CHAIN_NUM;
+	// 			if(access->orig_row->cicada_version[i].state == Cicada_ABORTED) {
+	// 				continue;
+	// 			}
+	// 			if(access->orig_row->cicada_version[i].Wts > txnMng->get_timestamp()) {
+	// 				continue;
+	// 			}
+	// 			// printf("version:%d : num:%d: cor_id:%ld\n", access->orig_row->cicada_version[i].key, txnMng->version_num[read_set[i]], cor_id);
+	// 			if(access->orig_row->cicada_version[i].key == txnMng->version_num[read_set[j]]) {
+	// 				rc = RCOK;
+	// 				if(access->orig_row->cicada_version[i].Rts < txnMng->get_timestamp())
+	// 					access->orig_row->cicada_version[i].Rts = txnMng->get_timestamp();
+	// 				break;
+	// 			} else {
+	// 				rc = Abort;
+	// 				INC_STATS(txnMng->get_thd_id(), cicada_case3_cnt, 1);
+	// 				// printf("Abort 6\n");
+	// 				DEBUG_C("TXN %ld read access->orig_row->cicada_version[%d].key:%ld, txnMng->version_num[%d] :%ld, row_state: %d.\n", txnMng->get_txn_id(), i, access->orig_row->cicada_version[i].key, read_set[j], txnMng->version_num[read_set[j]], access->orig_row->cicada_version[i].state);
+	// 				DEBUG_C("Read Abort 2\n");
+	// 				break;
+	// 			}
+	// 		}
+	// 		access->orig_row->_tid_word = 0;
+	// 		// access->orig_row->manager->local_cas_lock(txnMng, txnMng->get_txn_id(), 0);
+    //     } else if (txnMng->rdma_va_one_sided()) {
+    //     //remote
+    //         access = txn->accesses[ read_set[j] ];
+    //         rc = remote_read_or_write(yield, access, txnMng, read_set[j], true, cor_id);
+	// 		if (rc == Abort) INC_STATS(txnMng->get_thd_id(), cicada_case4_cnt, 1);
+    //     } else {
 
-		}
-    } 
+	// 	}
+    // } 
 	timespan = get_sys_clock() - start_time;
 	txnMng->txn_stats.cc_time += timespan;
 	txnMng->txn_stats.cc_time_short += timespan;

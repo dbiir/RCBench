@@ -64,6 +64,8 @@ class Row_si;
 class Row_null;
 class Row_silo;
 class Row_rdma_silo;
+class Row_rdma_si;
+class Row_rdma_redt;
 class Row_rdma_mocc;
 class Row_rdma_mvcc;
 class rdma_mvcc;
@@ -164,6 +166,26 @@ public:
         volatile uint64_t	_tid_word;  //lock info ：txn_id
         ts_t 			timestamp;
         Row_rdma_silo * manager;
+	#elif CC_ALG == RDMA_SI
+		volatile uint64_t _tid_word;  // si的锁
+		volatile uint64_t wts; //commit timestamp of the latest transaction that writes this item
+
+		volatile int64_t newest_index;
+		volatile uint64_t commit_ts[HIS_CHAIN_NUM]; // MVCC版本的提交时间戳
+		// char datas[HIS_CHAIN_NUM][ROW_DEFAULT_SIZE]; // MVCC版本
+
+		Row_rdma_si * manager;
+	#elif CC_ALG == RDMA_RED_T
+		volatile uint64_t _tid_word; 
+		volatile uint64_t wts; //commit timestamp of the latest transaction that writes this item
+		volatile uint64_t lock_type;
+		volatile uint64_t lock_owner[LOCK_LENGTH]; //解锁
+
+		volatile int64_t newest_index;
+		volatile uint64_t commit_ts[HIS_CHAIN_NUM]; // MVCC版本的提交时间戳
+		// char datas[HIS_CHAIN_NUM][ROW_DEFAULT_SIZE]; // MVCC版本
+
+		Row_rdma_redt * manager;
 	#elif CC_ALG == RDMA_MOCC
 		volatile uint64_t	_tid_word;
 		volatile uint64_t	is_hot;

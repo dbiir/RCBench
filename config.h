@@ -28,7 +28,7 @@
 #define SIT_DBPA        4
 #define SIT_ALL         5
 #define SIT_HG         6
-#define RDMA_SIT 6
+#define RDMA_SIT SIT_COROUTINE
 #if RDMA_SIT == SIT_TCP
   #define RDMA_ONE_SIDE false
   #define RDMA_TWO_SIDE false
@@ -80,7 +80,7 @@
 #define CHANGE_TCP_ONLY 0
 #define CHANGE_MSG_QUEUE 1
 
-#define HIS_CHAIN_NUM 4
+#define HIS_CHAIN_NUM 32
 #define USE_CAS
 #define MAX_SEND_SIZE 1
 
@@ -123,7 +123,7 @@
 // Simulation + Hardware
 /***********************************************/
 #define NODE_CNT 4
-#define THREAD_CNT 24
+#define THREAD_CNT 30
 #define REM_THREAD_CNT 1
 #define SEND_THREAD_CNT 1
 #define COROUTINE_CNT 8
@@ -131,7 +131,7 @@
 // PART_CNT should be at least NODE_CNT
 #define PART_CNT NODE_CNT
 #define CLIENT_NODE_CNT 1
-#define CLIENT_THREAD_CNT 2
+#define CLIENT_THREAD_CNT 4
 #define CLIENT_REM_THREAD_CNT 1
 #define CLIENT_SEND_THREAD_CNT 1
 #define CLIENT_RUNTIME false
@@ -164,7 +164,7 @@
 #define TIME_ENABLE         true //STATS_ENABLE
 
 #define FIN_BY_TIME true
-#define MAX_TXN_IN_FLIGHT 96
+#define MAX_TXN_IN_FLIGHT 240
 
 /***********************************************/
 // Memory System
@@ -219,7 +219,7 @@
 //RDMA_NO_WAIT2, RDMA_WAIT_DIE2:no matter read or write, mutex lock is used 
 #define ISOLATION_LEVEL SERIALIZABLE
 
-#define CC_ALG RDMA_TS1
+#define CC_ALG RDMA_SI
 
 #define YCSB_ABORT_MODE false
 #define QUEUE_C  APACITY_NEW 1000000
@@ -388,10 +388,10 @@
 #define DATA_PERC 100
 #define ACCESS_PERC 0.03
 #define INIT_PARALLELISM 1
-#define SYNTH_TABLE_SIZE 16777216
-#define ZIPF_THETA 0.2
-#define TXN_WRITE_PERC 1
-#define TUP_WRITE_PERC 0.2
+#define SYNTH_TABLE_SIZE 4194304
+#define ZIPF_THETA 0.9
+#define TXN_WRITE_PERC 0.1
+#define TUP_WRITE_PERC 1
 #define SCAN_PERC           0
 #define SCAN_LEN          20
 #define PERC_MULTI_PART     MPR
@@ -592,6 +592,8 @@ enum PPSTxnType {
 #define RDMA_DSLR_NO_WAIT 45
 #define RDMA_MAAT_H 47
 #define RDMA_NO_WAIT_H 48
+#define RDMA_SI 49
+#define RDMA_RED_T 50
 // hg
 #define HG_ID 5
 #if HG_ID == 0 || !RDMA_ONE_SIDE
@@ -681,5 +683,6 @@ enum PPSTxnType {
 #define SHMEM_ENV false
 #define ENVIRONMENT_EC2 false
 
+#define TEST_HLC false
 #endif
   
